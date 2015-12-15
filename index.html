@@ -1,0 +1,752 @@
+<!doctype html>
+<html itemscope="" itemtype="http://schema.org/WebPage" lang="en">
+	<head>
+		<link rel="shortcut icon" href="/favicon32.gif" type="image/x-icon" sizes="32x32" />
+		<link rel="shortcut icon" href="/favicon16.gif" type="image/x-icon" sizes="16x16" />
+		
+		<title>SVGnest - Open source vector nesting for CNC machines, lasers and plasma cutters</title>
+		
+		<link href='https://fonts.googleapis.com/css?family=Lato:400,700' rel='stylesheet' type='text/css'>
+		<link rel="stylesheet" type="text/css" href="style.css" />
+		<script src="util/matrix.js"></script>
+		<script src="util/domparser.js"></script>
+		<script src="util/clipper.js"></script>
+		<script src="util/parallel.js"></script>
+		<script src="util/geometryutil.js"></script>
+		<script src="util/placementworker.js"></script>
+		<script src="svgparser.js"></script>
+		<script src="svgnest.js"></script>
+		
+		<script src="util/filesaver.js"></script>
+		
+		<script>
+		// UI-specific stuff, button clicks go here
+		function ready(fn){
+			if (document.readyState != 'loading'){
+				fn();
+			}
+			else {
+				document.addEventListener('DOMContentLoaded', fn);
+			}
+		}
+		
+		ready(function(){
+			// FAQ toggle
+			var faq = document.getElementById('faq');
+			var faqbutton = document.getElementById('faqbutton');
+			
+			var faqvisible = false;
+			faqbutton.onclick = function(e){
+				if(!faqvisible){
+					faq.setAttribute('style','display: block');
+				}
+				else{
+					faq.removeAttribute('style');
+				}
+				faqvisible = !faqvisible;
+			};
+			
+			function hideSplash(){
+				var splash = document.getElementById('splash');
+				var svgnest = document.getElementById('svgnest');
+				splash.remove();
+				svgnest.setAttribute('style','display: block');
+			}
+			
+			var demo = document.getElementById('demo');
+			var upload = document.getElementById('upload');
+			var display = document.getElementById('select');
+			
+			demo.onclick = function(){
+				try{
+					var svg = window.SvgNest.parsesvg(display.innerHTML);
+					display.innerHTML = '';
+					display.appendChild(svg);
+				}
+				catch(e){
+					message.innerHTML = e;
+					message.className = 'error animated bounce';
+					return;
+				}			
+				
+				hideSplash();
+				message.innerHTML = 'Click on the outline to use as the bin';
+				message.className = 'active animated bounce';
+				
+				attachSvgListeners(svg);
+				hideSplash();
+			};
+			
+			var message = document.getElementById('message');
+			
+			if(!document.createElementNS || !document.createElementNS('http://www.w3.org/2000/svg', 'svg').createSVGRect){
+				message.innerHTML = 'Your browser does not have SVG support';
+				message.className = 'error animated bounce';
+				return
+			}
+			
+			if (!window.SvgNest) {
+				message.innerHTML = "Couldn't initialize SVGnest";
+				message.className = 'error animated bounce';
+				return;
+			}
+			
+			if(!window.File || !window.FileReader){
+				message.innerHTML = 'Your browser does not have file upload support';
+				message.className = 'error animated bounce';
+				return
+			}
+			
+			if(!window.Worker){
+				message.innerHTML = 'Your browser does not have web worker support';
+				message.className = 'error animated bounce';
+				return
+			}
+			
+			// button clicks
+			var upload = document.getElementById('upload');
+			var start = document.getElementById('start');
+			var download = document.getElementById('download');
+			var startlabel = document.getElementById('startlabel');
+			var fileinput = document.getElementById('fileinput');
+			
+			var config = document.getElementById('config');
+			var configbutton = document.getElementById('configbutton');
+			var configsave = document.getElementById('configsave');
+			
+			
+			var isworking = false;
+			start.onclick = function(){
+				iterations = 0;
+				if(isworking){
+					stopnest();
+				}
+				else{
+					startnest();
+				}
+				
+				display.className = 'disabled';
+				document.getElementById('info_time').setAttribute('style','display: none');
+			};
+			
+			function startnest(){
+				SvgNest.start(progress, renderSvg);
+				startlabel.innerHTML = 'Stop Nest';
+				start.className = 'button spinner';
+				configbutton.className = 'button config disabled';
+				config.className = '';
+				isworking = true;
+			}
+			
+			function stopnest(){
+				SvgNest.stop();
+				startlabel.innerHTML = 'Start Nest';
+				start.className = 'button start';
+				configbutton.className = 'button config';
+				isworking = false;
+			}
+			
+			// config
+			var configvisible = false;
+			configbutton.onclick = function(){
+				if(this.className == 'button config disabled'){
+					return false;
+				}
+				if(!configvisible){
+					config.className = 'active';
+					configbutton.className = 'button close';
+				}
+				else{
+					config.className = '';
+					configbutton.className = 'button config';
+				}
+				configvisible = !configvisible;
+				
+				return false;
+			}
+			
+			configsave.onclick = function(){
+				var c = {};
+				var inputs = document.querySelectorAll('#config input');
+				for(var i=0; i<inputs.length; i++){
+					var key = inputs[i].getAttribute('data-config');
+					if(inputs[i].getAttribute('type') == 'text'){
+						c[key] = inputs[i].value;
+					}
+					else if(inputs[i].getAttribute('type') == 'checkbox'){
+						c[key] = inputs[i].checked;
+					}
+				}
+				
+				window.SvgNest.config(c);
+				
+				// new configs will invalidate current nest
+				if(isworking){
+					stopnest();
+				}
+				configvisible = false;
+				config.className = '';
+				return false;
+			}
+			
+			upload.onclick = function(){
+				fileinput.click();
+			}
+			
+			download.onclick = function(){
+				if(download.className == 'button download disabled'){
+					return false;
+				}
+				
+				var bins = document.getElementById('bins');
+				
+				if(bins.children.length == 0){
+					message.innerHTML = 'No SVG to export';
+					message.className = 'error animated bounce';
+					return
+				}
+				
+				var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+				
+				var binHeight = parseInt(bins.children[0].getAttribute('height'));
+				svg.setAttribute('viewBox', bins.children[0].getAttribute('viewBox'));
+				
+				for(i=0; i<bins.children.length; i++){
+					var b = bins.children[i];
+					var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+					group.setAttribute('transform', 'translate(0 '+binHeight*1.1*i+')');
+					for(var j=0; j<b.children.length; j++){
+						group.appendChild(b.children[j].cloneNode(true));
+					}
+					
+					svg.appendChild(group);
+				}
+				
+				var blob = new Blob([svg.outerHTML], {type: "image/svg+xml;charset=utf-8"});
+				saveAs(blob, "SVGnest-output.svg");
+			}
+			
+			fileinput.onchange = function(e){			
+				var file = e.target.files[0];
+				if(!file){
+					return;
+				}
+
+				if(!file.type || (file.type.search('svg') < 0 && file.type.search('xml') < 0 &&  file.type.search('text') < 0)){
+					message.innerHTML = 'Only SVG files allowed';
+					message.className = 'error animated bounce';
+					return
+				}
+				
+				var reader = new FileReader();
+				var input = this;
+				reader.onload = function(e) {
+					input.value = null;
+					
+					if(reader.result){
+						try{
+							var svg = window.SvgNest.parsesvg(reader.result);
+							display.innerHTML = '';
+							display.appendChild(svg);
+						}
+						catch(e){
+							message.innerHTML = e;
+							message.className = 'error animated bounce';
+							return;
+						}					
+						
+						hideSplash();
+						message.innerHTML = 'Click on the outline to use as the bin';
+						message.className = 'active animated bounce';
+						start.className = 'start button disabled';
+						
+						attachSvgListeners(svg);
+					}
+				}
+				
+				reader.readAsText(file);
+			};
+			
+			function attachSvgListeners(svg){
+				// attach event listeners
+				for(var i=0; i<svg.childNodes.length; i++){
+					var node = svg.childNodes[i];
+					if(node.nodeType == 1){
+						node.onclick = function(){
+							if(display.className == 'disabled'){
+								return;
+							}
+							var currentbin = document.querySelector('#select .active');
+							if(currentbin){
+								currentbin.removeAttribute('class');
+							}
+							
+							window.SvgNest.setbin(this);
+							this.setAttribute('class','active');
+							
+							start.className = 'button start animated bounce';
+							message.className = '';
+						}
+					}
+				}
+			}
+			
+			var prevpercent = 0;
+			var startTime = null;
+			
+			function progress(percent){
+				var transition = percent > prevpercent ? '; transition: width 0.1s' : '';
+				document.getElementById('info_progress').setAttribute('style','width: '+Math.round(percent*100)+'% ' + transition);
+				document.getElementById('info').setAttribute('style','display: block');
+				
+				prevpercent = percent;
+				
+				var now = new Date().getTime();
+				if(startTime && now){
+					var diff = now-startTime;
+					// show a time estimate for long-running placements
+					var estimate = (diff/percent)*(1-percent);
+					document.getElementById('info_time').innerHTML = millisecondsToStr(estimate)+' remaining';
+					
+					if(diff > 5000 && percent < 0.3 && percent > 0.02 && estimate > 10000){
+						document.getElementById('info_time').setAttribute('style','display: block');
+					}
+				}
+				
+				if(percent > 0.95 || percent < 0.02){
+					document.getElementById('info_time').setAttribute('style','display: none');
+				}
+				if(percent < 0.02){
+					startTime = new Date().getTime();
+				}
+			}
+			
+			var iterations = 0;
+			
+			function renderSvg(svglist, efficiency){
+				iterations++;
+				document.getElementById('info_iterations').innerHTML = iterations;
+				
+				if(!svglist || svglist.length == 0){
+					return;
+				}
+				var bins = document.getElementById('bins');
+				bins.innerHTML = '';
+				
+				for(var i=0; i<svglist.length; i++){
+					if(svglist.length > 2){
+						svglist[i].setAttribute('class','grid');
+					}
+					bins.appendChild(svglist[i]);
+				}
+				
+				if(efficiency || efficiency === 0){
+					document.getElementById('info_efficiency').innerHTML = Math.round(efficiency*100);
+				}
+				
+				document.getElementById('info_placement').setAttribute('style','display: block');
+				display.setAttribute('style','display: none');
+				download.className = 'button download animated bounce';
+			}
+			
+			message.onclick = function(e){
+				this.className='';
+			}
+			
+			function millisecondsToStr (milliseconds) {
+				function numberEnding (number) {
+					return (number > 1) ? 's' : '';
+				}
+
+				var temp = Math.floor(milliseconds / 1000);
+				var years = Math.floor(temp / 31536000);
+				if (years) {
+					return years + ' year' + numberEnding(years);
+				}
+				var days = Math.floor((temp %= 31536000) / 86400);
+				if (days) {
+					return days + ' day' + numberEnding(days);
+				}
+				var hours = Math.floor((temp %= 86400) / 3600);
+				if (hours) {
+					return hours + ' hour' + numberEnding(hours);
+				}
+				var minutes = Math.floor((temp %= 3600) / 60);
+				if (minutes) {
+					return minutes + ' minute' + numberEnding(minutes);
+				}
+				var seconds = temp % 60;
+				if (seconds) {
+					return seconds + ' second' + numberEnding(seconds);
+				}
+				return 'less than a second';
+			}
+		});
+		</script>
+	</head>
+	<body>
+		<div id="splash">
+			<!-- a small splash page that explains what this thing is -->
+			<img src="img/logo.svg" alt="SVGnest" class="logo" />
+			<h1 class="tagline">Open Source vector nesting</h1>
+			<em class="subscript">created by <a href="http://www.jack.works" target="_blank">Jack Qiao</a></em>
+			
+			<ul class="nav">
+				<li class="button start" id="demo">Demo</li>
+				<li class="button upload" id="upload">Upload SVG</li>
+				<li class="button code"><a href="https://github.com/Jack000/SVGnest" target="_blank">Github</a></li>
+				<li class="button" id="faqbutton">FAQ</li>
+			</ul>
+			
+			<div id="faq">
+				<h1>What exactly is "nesting"?</h1>
+				<p>We have some (2d) parts to cut and a piece of material, we want to arrange the parts to use as little material as possible. This is a common problem if you use a laser cutter, plasma cutter, CNC machine etc.</p>
+				<p>In computer terms this is called the irregular bin-packing problem</p>
+				
+				<h1>How much does it cost?</h1>
+				<p>It's free and open source. The code and implementation details are on <a href="#">Github</a></p>
+				
+				<h1>My SVG text/image doesn't show up?</h1>
+				<p>Nesting only works for closed shapes, so SVG elements that don't represent closed shapes are removed. Convert text and any other elements to outlines first. Ensure that outlines do not intersect or overlap eachother. Outlines that are inside other outlines are considered holes.</p>
+			</div>
+		</div>
+		
+		<div id="svgnest">
+			<img src="img/logo.svg" alt="SVGnest" class="logo" />
+			<div id="controls">
+				<ul class="nav">
+				<li class="button start disabled" id="start"><span id="startlabel">Start Nest</span></li>
+				<li class="button download disabled" id="download">Download SVG</li>
+				<li class="button config" id="configbutton">Configuration</li>
+				</ul>
+				
+				<div id="config">
+					<div id="configwrapper">
+						<input type="text" value="0" data-config="spacing" />
+						<h3>Space between parts</h3><span class="tooltip" title="The space between parts in SVG units or pixels">?</span>
+						
+						<input type="text" value="1" data-config="curveTolerance" />
+						<h3>Curve tolerance</h3><span class="tooltip" title="The maximum error allowed when converting Beziers and arcs to line segments. In SVG units or pixels. Smaller tolerances will take longer to compute">?</span>
+						
+						<input type="text" value="4" data-config="rotations" />
+						<h3>Part rotations</h3><span class="tooltip" title="Number of rotations to consider when inserting a part. Larger rotations will take longer to compute, and may also take longer to converge to a good solution">?</span>
+						
+						<!--
+						todo: make this flag do something
+						<input type="checkbox" class="checkbox" checked="checked" data-config="exploreConcave" />
+						<h3>Explore concave areas</h3><span class="tooltip" title="Try to solve for enclosed concave areas (eg. a jigsaw puzzle piece) This will take much longer to compute ">?</span>-->
+						
+						<input type="text" value="10" data-config="populationSize" />
+						<h3>GA population</h3><span class="tooltip" title="The number of solutions in the Genetic Algorithm population. Larger populations will converge slower but may result in better solutions in the long run">?</span>
+						
+						<input type="text" value="10" data-config="mutationRate" />
+						<h3>GA mutation rate</h3><span class="tooltip" title="Mutation rate (in percent) at each generation of the Genetic Algorithm. A 100% mutation rate is equivalent to random sampling">?</span>
+						
+						<a href="#" class="button" id="configsave">Save Settings</a>
+					</div>
+				</div>
+			</div>
+			
+			<div class="sidebar">				
+				<div id="info">				
+				<h2 id="info_time"></h2>
+				<div class="progress"><div class="progress_inner" id="info_progress"></div></div>
+				<span class="subscript">Placement progress</span>
+				
+				<div id="info_placement">
+					<div class="column left">
+						<h1 class="label"><span id="info_efficiency"></span><sup>%</sup></h1>
+						<span class="subscript">Material Utilization</span>
+					</div>
+					
+					<div class="column right">
+						<h1 class="label" id="info_iterations"></h1>
+						<span class="subscript">Iterations</span>
+					</div>
+				</div>
+				</div>				
+			</div>
+			
+			<div id="select">
+				<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 16.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1"
+	 id="svg2" xmlns:svg="http://www.w3.org/2000/svg" xmlns:cc="http://creativecommons.org/ns#" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" inkscape:version="0.48+devel r" sodipodi:docname="fond puzzle.svg"
+	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="1147.592px"
+	 height="1397.269px" viewBox="0 0 1147.592 1397.269" enable-background="new 0 0 1147.592 1397.269" xml:space="preserve">
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="684.045,313.021 688.396,316.502 
+	666.488,320.222 666.488,301.938 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="697.067,274.188 697.067,284.888 
+	709.719,285.192 710.293,275.354 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="723.908,310.173 715.362,311.75 
+	709.719,305.137 712.627,296.947 721.17,295.366 726.81,301.979 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="617.292,327.656 618.742,334.336 
+	599.735,334.853 599.735,316.567 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="619.963,297.312 619.963,308.009 
+	633.189,307.754 633.189,298.479 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="646.805,333.297 638.259,334.874 
+	632.618,328.261 635.523,320.071 644.069,318.494 649.706,325.106 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="777.063,297.312 746.983,326.684 
+	760.468,350.543 782.898,357.46 788.995,347.432 814.669,349.246 818.817,308.009 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="666.589,345.721 664.255,372.844 
+	681.632,374.92 694.857,369.203 692.262,352.357 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="599.735,370.899 636.247,401.24 
+	680.981,401.24 680.981,424.191 599.735,424.191 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="759.315,398.588 775.721,370.173 
+	792.128,398.588 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="741.307,297.625 734.229,288.748 
+	736.757,277.683 746.983,272.756 757.206,277.683 759.735,288.748 752.654,297.625 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="647.399,468.796 651.749,472.275 
+	629.84,475.989 629.84,457.706 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="650.068,438.454 650.068,449.148 
+	662.723,449.458 663.294,439.621 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="758.061,495.637 800.103,496.141 
+	807.438,469.734 796.468,448.981 785.065,451.765 768.195,432.327 736.104,458.551 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="694.308,461.891 687.232,453.014 
+	689.758,441.948 699.984,437.022 710.211,441.948 712.736,453.014 705.658,461.891 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="854.273,413.838 858.625,417.317 
+	836.717,421.037 836.717,402.754 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="856.944,383.496 856.944,394.196 
+	869.597,394.5 870.171,384.663 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="883.785,419.481 875.24,421.059 
+	869.597,414.445 872.505,406.255 881.048,404.675 886.688,411.288 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="779.841,406.62 779.841,417.317 
+	793.067,417.062 793.067,407.787 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="901.184,406.933 894.106,398.056 
+	896.635,386.99 906.861,382.064 917.084,386.99 919.613,398.056 912.532,406.933 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="836.717,279.688 827.633,325.708 
+	894.106,332.389 910.101,303.56 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="676.909,474.433 668.363,476.014 
+	662.723,469.4 665.628,461.207 674.174,459.633 679.814,466.246 "/>
+<rect x="21.066" y="419.913" width="30.913" height="18.155"/>
+<rect x="106.758" y="432.881" width="29.563" height="5.188"/>
+<rect x="184.038" y="444.809" width="25.963" height="17.636"/>
+<rect x="305.408" y="407.01" width="17.01" height="40.392"/>
+<rect x="262.876" y="438.068" width="17.004" height="17.633"/>
+<rect x="338.931" y="407.01" width="47.904" height="25.868"/>
+<polygon points="66.82,455.701 47.112,487.86 101.95,490.972 140.64,473.336 90.161,476.448 87.322,453.625 "/>
+<polygon points="196.401,475.929 224.016,503.937 348.972,497.196 271.061,472.297 227.967,453.625 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="1065.045,310.815 1069.396,314.296 
+	1047.488,318.016 1047.488,299.732 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="1078.067,271.981 1078.067,282.682 
+	1090.719,282.986 1091.293,273.148 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="1104.908,307.967 1096.362,309.544 
+	1090.719,302.931 1093.627,294.741 1102.17,293.16 1107.81,299.773 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="998.292,325.45 999.742,332.13 
+	980.735,332.646 980.735,314.361 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="1000.963,295.105 1000.963,305.803 
+	1014.189,305.548 1014.189,296.272 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="1027.805,331.091 1019.259,332.668 
+	1013.618,326.055 1016.523,317.865 1025.069,316.288 1030.706,322.9 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="601.531,43.926 571.451,73.298 
+	584.936,97.157 607.366,104.074 613.463,94.046 639.137,95.86 643.285,54.623 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="1047.589,343.515 1045.255,370.638 
+	1062.632,372.714 1075.857,366.997 1073.262,350.151 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="980.735,368.693 1017.247,399.034 
+	1061.981,399.034 1061.981,421.985 980.735,421.985 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="583.783,145.202 600.188,116.787 
+	616.596,145.202 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="565.774,44.239 558.696,35.362 
+	561.225,24.297 571.451,19.37 581.674,24.297 584.203,35.362 577.122,44.239 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="1028.399,466.59 1032.749,470.069 
+	1010.84,473.783 1010.84,455.5 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="1031.068,436.248 1031.068,446.942 
+	1043.723,447.252 1044.294,437.415 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="582.528,242.251 624.57,242.755 
+	631.906,216.349 620.936,195.596 609.533,198.379 592.663,178.941 560.571,205.165 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="1075.308,459.685 1068.232,450.808 
+	1070.758,439.742 1080.984,434.816 1091.211,439.742 1093.736,450.808 1086.658,459.685 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="678.741,160.452 683.093,163.932 
+	661.185,167.651 661.185,149.368 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="681.412,130.11 681.412,140.811 
+	694.064,141.114 694.639,131.277 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="708.253,166.096 699.708,167.673 
+	694.064,161.06 696.973,152.869 705.516,151.289 711.155,157.902 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="604.309,153.234 604.309,163.932 
+	617.535,163.676 617.535,154.401 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="725.651,153.547 718.574,144.67 
+	721.103,133.604 731.329,128.679 741.552,133.604 744.081,144.67 737,153.547 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="661.185,26.303 652.101,72.322 
+	718.574,79.003 734.568,50.174 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="1057.909,472.227 1049.363,473.808 
+	1043.723,467.194 1046.628,459.001 1055.174,457.427 1060.814,464.04 "/>
+<rect x="402.066" y="417.707" width="30.913" height="18.155"/>
+<rect x="487.758" y="430.675" width="29.564" height="5.188"/>
+<rect x="565.949" y="560.794" width="25.963" height="17.636"/>
+<rect x="687.32" y="522.995" width="17.01" height="40.392"/>
+<rect x="644.789" y="554.054" width="17.004" height="17.633"/>
+<rect x="720.844" y="522.995" width="47.904" height="25.868"/>
+<polygon points="447.82,453.495 428.112,485.654 482.95,488.766 521.641,471.13 471.161,474.242 468.322,451.419 "/>
+<polygon points="578.313,591.914 605.928,619.922 730.885,613.182 652.973,588.282 609.879,569.61 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="903.513,64.451 907.864,67.932 
+	885.956,71.651 885.956,53.368 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="916.535,25.617 916.535,36.317 
+	929.187,36.622 929.761,26.784 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="943.376,61.603 934.83,63.18 
+	929.187,56.566 932.095,48.377 940.638,46.796 946.277,53.409 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="836.76,79.086 838.209,85.766 
+	819.203,86.282 819.203,67.997 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="839.432,48.741 839.432,59.438 
+	852.657,59.184 852.657,49.908 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="866.272,84.727 857.727,86.304 
+	852.086,79.69 854.991,71.501 863.537,69.924 869.174,76.536 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="996.531,48.741 966.451,78.113 
+	979.936,101.973 1002.366,108.89 1008.463,98.861 1034.137,100.676 1038.285,59.438 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="886.057,97.15 883.723,124.273 
+	901.1,126.35 914.325,120.633 911.729,103.787 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="819.203,122.329 855.715,152.67 
+	900.449,152.67 900.449,175.621 819.203,175.621 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="978.783,150.018 995.188,121.603 
+	1011.596,150.018 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="960.774,49.055 953.696,40.178 
+	956.225,29.112 966.451,24.186 976.674,29.112 979.203,40.178 972.122,49.055 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="866.867,220.226 871.217,223.705 
+	849.308,227.419 849.308,209.136 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="869.536,189.884 869.536,200.578 
+	882.19,200.888 882.762,191.051 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="977.528,247.066 1019.57,247.57 
+	1026.906,221.164 1015.936,200.411 1004.533,203.194 987.663,183.757 955.571,209.98 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="913.775,213.32 906.7,204.443 
+	909.226,193.378 919.452,188.452 929.679,193.378 932.204,204.443 925.126,213.32 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="1073.741,165.268 1078.093,168.747 
+	1056.185,172.467 1056.185,154.184 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="1076.412,134.926 1076.412,145.626 
+	1089.064,145.93 1089.639,136.093 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="1103.253,170.911 1094.708,172.488 
+	1089.064,165.875 1091.973,157.685 1100.516,156.104 1106.155,162.718 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="999.309,158.05 999.309,168.747 
+	1012.535,168.491 1012.535,159.217 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="1120.651,158.362 1113.574,149.485 
+	1116.103,138.42 1126.329,133.494 1136.552,138.42 1139.081,149.485 1132,158.362 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="1056.185,31.118 1047.101,77.138 
+	1113.574,83.818 1129.568,54.989 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="896.377,225.862 887.831,227.443 
+	882.19,220.83 885.096,212.637 893.642,211.063 899.282,217.676 "/>
+<rect x="797.979" y="540.714" width="30.912" height="18.155"/>
+<rect x="883.67" y="553.682" width="29.564" height="5.188"/>
+<rect x="916.535" y="525.265" width="25.963" height="17.636"/>
+<rect x="1037.906" y="487.466" width="17.01" height="40.392"/>
+<rect x="995.375" y="518.524" width="17.004" height="17.633"/>
+<rect x="1071.43" y="487.466" width="47.904" height="25.868"/>
+<polygon points="843.732,576.502 824.023,608.661 878.861,611.772 917.553,594.137 867.072,597.249 864.234,574.426 "/>
+<polygon points="928.898,556.385 956.514,584.393 1081.471,577.652 1003.559,552.753 960.465,534.081 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="105.375,554.337 109.727,557.817 
+	87.819,561.537 87.819,543.254 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="118.398,515.503 118.398,526.203 
+	131.049,526.508 131.624,516.67 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="145.239,551.488 136.693,553.065 
+	131.049,546.452 133.958,538.263 142.5,536.682 148.14,543.295 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="38.623,568.972 40.072,575.651 
+	21.066,576.168 21.066,557.883 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="41.294,538.627 41.294,549.324 
+	54.52,549.069 54.52,539.794 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="68.135,574.612 59.589,576.189 
+	53.949,569.576 56.854,561.387 65.4,559.81 71.037,566.422 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="198.394,538.627 168.314,567.999 
+	181.798,591.858 204.229,598.775 210.326,588.747 236,590.562 240.148,549.324 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="87.919,587.036 85.585,614.159 
+	102.962,616.235 116.188,610.519 113.592,593.673 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="21.066,612.215 57.578,642.556 
+	102.312,642.556 102.312,665.507 21.066,665.507 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="180.646,639.903 197.051,611.488 
+	213.458,639.903 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="162.637,538.94 155.559,530.063 
+	158.087,518.998 168.314,514.071 178.537,518.998 181.066,530.063 173.985,538.94 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="68.73,710.111 73.08,713.591 
+	51.17,717.305 51.17,699.021 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="71.399,679.77 71.399,690.464 
+	84.053,690.773 84.625,680.937 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="115.638,703.206 108.563,694.329 
+	111.088,683.264 121.315,678.338 131.542,683.264 134.067,694.329 126.989,703.206 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="275.604,655.153 279.956,658.633 
+	258.047,662.353 258.047,644.069 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="278.275,624.812 278.275,635.512 
+	290.927,635.815 291.501,625.979 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="305.116,660.797 296.571,662.374 
+	290.927,655.761 293.835,647.57 302.378,645.99 308.018,652.604 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="201.171,647.936 201.171,658.633 
+	214.398,658.377 214.398,649.103 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="322.514,648.248 315.437,639.371 
+	317.965,628.306 328.192,623.38 338.415,628.306 340.944,639.371 333.863,648.248 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="258.047,521.004 248.963,567.023 
+	315.437,573.704 331.431,544.875 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="98.24,715.748 89.694,717.329 
+	84.053,710.716 86.958,702.522 95.504,700.948 101.145,707.562 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="504.59,580.795 508.941,584.275 
+	487.033,587.995 487.033,569.712 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="517.611,541.961 517.611,552.661 
+	530.264,552.966 530.838,543.128 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="545.365,696.138 536.818,697.715 
+	531.176,691.102 534.084,682.912 542.627,681.331 548.266,687.944 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="437.837,595.43 439.287,602.109 
+	420.28,602.626 420.28,584.341 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="440.508,565.085 440.508,575.782 
+	453.734,575.527 453.734,566.252 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="467.35,601.07 458.804,602.647 
+	453.163,596.034 456.068,587.845 464.614,586.268 470.251,592.88 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="598.52,683.276 568.439,712.648 
+	581.924,736.508 604.355,743.425 610.451,733.396 636.125,735.211 640.273,693.974 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="487.134,613.494 484.8,640.617 
+	502.177,642.693 515.402,636.977 512.807,620.131 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="420.28,638.673 456.792,669.014 
+	501.526,669.014 501.526,691.965 420.28,691.965 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="580.771,784.553 597.178,756.138 
+	613.584,784.553 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="562.764,683.59 555.686,674.713 
+	558.213,663.647 568.439,658.721 578.662,663.647 581.191,674.713 574.111,683.59 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="467.944,736.569 472.294,740.049 
+	450.385,743.763 450.385,725.479 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="470.613,706.228 470.613,716.922 
+	483.268,717.231 483.839,707.395 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="514.852,729.664 507.777,720.787 
+	510.303,709.722 520.529,704.796 530.756,709.722 533.281,720.787 526.203,729.664 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="675.73,799.803 680.082,803.282 
+	658.174,807.002 658.174,788.719 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="678.4,769.461 678.4,780.161 
+	691.053,780.465 691.627,770.628 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="705.242,805.446 696.697,807.023 
+	691.053,800.41 693.961,792.22 702.504,790.64 708.145,797.253 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="601.297,792.585 601.297,803.282 
+	614.523,803.026 614.523,793.752 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="563.383,788.719 559.621,796.152 
+	550.156,798.833 550.156,807.002 559.621,810.156 563.383,816.253 571.941,816.253 575.18,811.84 581.07,807.023 581.07,798.833 
+	575.18,795.374 570.123,788.719 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="722.641,792.897 715.563,784.021 
+	718.092,772.955 728.318,768.029 738.541,772.955 741.07,784.021 733.988,792.897 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="658.174,665.653 649.09,711.673 
+	715.563,718.354 731.557,689.524 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="497.454,742.206 488.908,743.787 
+	483.268,737.174 486.173,728.98 494.719,727.406 500.359,734.02 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="900.502,703.802 904.854,707.282 
+	882.945,711.002 882.945,692.719 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="913.523,664.968 913.523,675.668 
+	926.176,675.973 926.75,666.135 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="940.365,700.953 931.818,702.53 
+	926.176,695.917 929.084,687.728 937.627,686.146 943.266,692.76 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="833.748,718.437 835.197,725.116 
+	816.191,725.633 816.191,707.348 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="836.42,688.092 836.42,698.789 
+	849.646,698.534 849.646,689.259 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="863.262,724.077 854.715,725.654 
+	849.074,719.041 851.98,710.852 860.525,709.274 866.162,715.887 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="993.52,688.092 963.439,717.464 
+	976.924,741.323 999.355,748.24 1005.451,738.212 1031.125,740.026 1035.273,698.789 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="957.764,688.405 950.686,679.528 
+	953.213,668.463 963.439,663.536 973.662,668.463 976.191,679.528 969.111,688.405 "/>
+<polygon fill="#FFFFFF" stroke="#010101" stroke-width="0.1" stroke-miterlimit="10" points="1053.174,670.469 1044.09,716.488 
+	1110.563,723.169 1126.557,694.34 "/>
+<rect width="511.822" height="339.235"/>
+</svg>
+
+			</div>
+			<div id="bins"></div>
+			
+			<input id="fileinput" type="file" style="visibility:hidden" />
+		</div>
+		
+		<div id="messagewrapper">
+			<div id="message"></div>
+		</div>
+	</body>
+</html>
