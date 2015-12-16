@@ -598,4 +598,8 @@ font-weight: 700;
 		width: 70%;
 		margin: 0 15%;
 	}
+	
+	h1.label{
+	font-size: 3em;
+	}
 }
