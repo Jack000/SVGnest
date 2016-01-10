@@ -12,8 +12,11 @@
 	// floating point comparison tolerance
 	var TOL = Math.pow(10, -9); // Floating point error is likely to be above 1 epsilon
 	
-	function _almostEqual(a, b){
-		return Math.abs(a - b) < TOL;
+	function _almostEqual(a, b, tolerance){
+		if(!tolerance){
+			tolerance = TOL
+		}
+		return Math.abs(a - b) < tolerance;
 	}
 	
 	// returns true if points are within the given distance
