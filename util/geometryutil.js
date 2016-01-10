@@ -10,7 +10,7 @@
 	// private shared variables/methods
 	
 	// floating point comparison tolerance
-	var TOL = Math.pow(10, -8); // Floating point error is likely to be above 1 epsilon
+	var TOL = Math.pow(10, -9); // Floating point error is likely to be above 1 epsilon
 	
 	function _almostEqual(a, b){
 		return Math.abs(a - b) < TOL;
@@ -1538,7 +1538,7 @@
 						// if this vector points us back to where we came from, ignore it.
 						// ie cross product = 0, dot product < 0
 						// this requires slightly looser tolerance
-						if(prevvector && Math.abs(vectors[i].y * prevvector.x - vectors[i].x * prevvector.y) < TOL*1024 && vectors[i].y * prevvector.y + vectors[i].x * prevvector.x < 0){
+						if(prevvector && Math.abs(vectors[i].y * prevvector.x - vectors[i].x * prevvector.y) < TOL*10 && vectors[i].y * prevvector.y + vectors[i].x * prevvector.x < 0){
 							continue;
 						}
 						
@@ -1578,6 +1578,19 @@
 					referencey += translate.y;
 					
 					if(_almostEqual(referencex, startx) && _almostEqual(referencey, starty)){
+						// we've made a full loop
+						break;
+					}
+					
+					// if A and B start on a touching horizontal line, the end point may not be the start point
+					var looped = false;
+					for(i=0; i<NFP.length; i++){
+						if(_almostEqual(referencex, NFP[i].x) && _almostEqual(referencey, NFP[i].y)){
+							looped = true;
+						}
+					}
+					
+					if(looped){
 						// we've made a full loop
 						break;
 					}
