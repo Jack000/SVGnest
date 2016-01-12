@@ -1000,7 +1000,7 @@
 				var ABnorm = {x: B.y-A.y, y: A.x-B.x};
 				var EFnorm = {x: F.y-E.y, y: E.x-F.x};
 				
-				// segment normals much point in opposite directions
+				// segment normals must point in opposite directions
 				if(Math.abs(ABnorm.y * EFnorm.x - ABnorm.x * EFnorm.y) < TOL && ABnorm.y * EFnorm.y + ABnorm.x * EFnorm.x < 0){
 					// normal of AB segment must point in same direction as given direction vector
 					var normdot = ABnorm.y * direction.y + ABnorm.x * direction.x;
@@ -1022,9 +1022,9 @@
 			}
 			else if(dotA > EFmin && dotA < EFmax){
 				var d = this.pointDistance(A,E,F,reverse);
-				if(d && _almostEqual(d, 0)){ //  A currently touches EF, but AB is moving away from EF
+				if(d !== null && _almostEqual(d, 0)){ //  A currently touches EF, but AB is moving away from EF
 					var dB = this.pointDistance(B,E,F,reverse,true);
-					if(dB < 0){
+					if(dB < 0 || _almostEqual(dB*overlap,0)){
 						d = null;
 					}
 				}
@@ -1042,9 +1042,9 @@
 			else if(dotB > EFmin && dotB < EFmax){
 				var d = this.pointDistance(B,E,F,reverse);
 				
-				if(d && _almostEqual(d, 0)){ // crossA>crossB A currently touches EF, but AB is moving away from EF
+				if(d !== null && _almostEqual(d, 0)){ // crossA>crossB A currently touches EF, but AB is moving away from EF
 					var dA = this.pointDistance(A,E,F,reverse,true);
-					if(dA < 0){
+					if(dA < 0 || _almostEqual(dA*overlap,0)){
 						d = null;
 					}
 				}
@@ -1055,9 +1055,9 @@
 			
 			if(dotE > ABmin && dotE < ABmax){
 				var d = this.pointDistance(E,A,B,direction);
-				if(d && _almostEqual(d, 0)){ // crossF<crossE A currently touches EF, but AB is moving away from EF
+				if(d !== null && _almostEqual(d, 0)){ // crossF<crossE A currently touches EF, but AB is moving away from EF
 					var dF = this.pointDistance(F,A,B,direction, true);
-					if(dF < 0){
+					if(dF < 0 || _almostEqual(dF*overlap,0)){
 						d = null;
 					}
 				}
@@ -1068,9 +1068,9 @@
 			
 			if(dotF > ABmin && dotF < ABmax){
 				var d = this.pointDistance(F,A,B,direction);
-				if(d && _almostEqual(d, 0)){ // && crossE<crossF A currently touches EF, but AB is moving away from EF
+				if(d !== null && _almostEqual(d, 0)){ // && crossE<crossF A currently touches EF, but AB is moving away from EF
 					var dE = this.pointDistance(E,A,B,direction, true);
-					if(dE < 0){
+					if(dE < 0 || _almostEqual(dE*overlap,0)){
 						d = null;
 					}
 				}
@@ -1550,9 +1550,19 @@
 						
 						// if this vector points us back to where we came from, ignore it.
 						// ie cross product = 0, dot product < 0
-						// this requires slightly looser tolerance
-						if(prevvector && Math.abs(vectors[i].y * prevvector.x - vectors[i].x * prevvector.y) < TOL*10 && vectors[i].y * prevvector.y + vectors[i].x * prevvector.x < 0){
-							continue;
+						if(prevvector && vectors[i].y * prevvector.y + vectors[i].x * prevvector.x < 0){
+							
+							// compare magnitude with unit vectors
+							var vectorlength = Math.sqrt(vectors[i].x*vectors[i].x+vectors[i].y*vectors[i].y);
+							var unitv = {x: vectors[i].x/vectorlength, y:vectors[i].y/vectorlength};
+							
+							var prevlength = Math.sqrt(prevvector.x*prevvector.x+prevvector.y*prevvector.y);
+							var prevunit = {x: prevvector.x/prevlength, y:prevvector.y/prevlength};
+							
+							// we need to scale down to unit vectors to normalize vector length. Could also just do a tan here
+							if(Math.abs(unitv.y * prevunit.x - unitv.x * prevunit.y) < TOL*1000){
+								continue;
+							}
 						}
 						
 						var d = this.polygonSlideDistance(A, B, vectors[i], true);
@@ -1570,14 +1580,16 @@
 					}
 					
 					
-					
 					if(translate === null || _almostEqual(maxd, 0)){
 						// didn't close the loop, something went wrong here
+						console.log('ERROR: ', A,B);
 						break;
 					}
 					
 					translate.start.marked = true;
 					translate.end.marked = true;
+					
+					prevvector = translate;
 					
 					// trim
 					var vlength2 = translate.x*translate.x + translate.y*translate.y;
@@ -1610,7 +1622,6 @@
 						break;
 					}
 					
-					prevvector = translate;
 					
 					NFP.push({
 						x: referencex,
