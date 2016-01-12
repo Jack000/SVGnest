@@ -368,7 +368,15 @@
 				var A = rotatePolygon(pair.A, pair.key.Arotation);
 				var B = rotatePolygon(pair.B, pair.key.Brotation);
 						
-				var nfp = GeometryUtil.noFitPolygon(A,B,pair.key.inside,pair.key.inside);
+				if(pair.key.inside){
+					var nfp = GeometryUtil.noFitPolygonRectangle(A,B,pair.key.inside,pair.key.inside);
+				}
+				else{
+					var nfp = GeometryUtil.noFitPolygon(A,B,pair.key.inside,false);
+					if(!nfp){
+						console.log('ERROR:', pair.key);
+					}
+				}
 				
 				// ensure all NFPs have the same winding direction
 				for(var i=0; i<nfp.length; i++){
