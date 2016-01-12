@@ -1082,12 +1082,7 @@
 			if(distances.length == 0){
 				return null;
 			}
-			
-			for(var i=0; i<distances.length; i++){
-				if(_almostEqual(distances[i], 0)){
-					distances[i] = 0;
-				}
-			}
+
 			return Math.min.apply(Math, distances);
 		},
 		
