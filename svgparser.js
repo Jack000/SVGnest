@@ -18,7 +18,7 @@
 				
 		this.conf = {
 			tolerance: 2, // max bound for bezier->line segment conversion, in native SVG units
-			toleranceSvg: 0.000001 // fudge factor for browser inaccuracy in SVG unit handling
+			toleranceSvg: 0.002 // fudge factor for browser inaccuracy in SVG unit handling
 		}; 
 	}
 	
@@ -1047,8 +1047,10 @@
 		}
 		
 		// do not include last point if coincident with starting point
-		if(poly.length > 0 && GeometryUtil.almostEqual(poly[0].x,poly[poly.length-1].x, this.conf.toleranceSvg) && GeometryUtil.almostEqual(poly[0].y,poly[poly.length-1].y, this.conf.toleranceSvg)){
-			poly.pop();
+		if(poly.length > 0){
+			while(GeometryUtil.almostEqual(poly[0].x,poly[poly.length-1].x, this.conf.toleranceSvg) && GeometryUtil.almostEqual(poly[0].y,poly[poly.length-1].y, this.conf.toleranceSvg)){
+				poly.pop();
+			}
 		}
 		
 		return poly;
