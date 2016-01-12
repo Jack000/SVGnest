@@ -576,7 +576,7 @@ font-weight: 700;
 	}
 }
 
-@media only screen and (max-width: 1400px) {
+@media only screen and (max-width: 1500px) {
    body { font-size: 18px; }
 	#svgnest, #messagewrapper{
 	width: 50em;
