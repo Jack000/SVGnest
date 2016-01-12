@@ -977,6 +977,21 @@
 				return null;
 			}
 			
+			var overlap;
+			
+			if((ABmax > EFmax && ABmin < EFmin) || (EFmax > ABmax && EFmin < ABmin)){
+				overlap = 1;
+			}
+			else{
+				var minMax = Math.min(ABmax, EFmax);
+				var maxMin = Math.max(ABmin, EFmin);
+				
+				var maxMax = Math.max(ABmax, EFmax);
+				var minMin = Math.min(ABmin, EFmin);
+				
+				overlap = (minMax-maxMin)/(maxMax-minMin);
+			}
+			
 			// lines are colinear
 			var crossABE = (E.y - A.y) * (B.x - A.x) - (E.x - A.x) * (B.y - A.y);
 			var crossABF = (F.y - A.y) * (B.x - A.x) - (F.x - A.x) * (B.y - A.y);
