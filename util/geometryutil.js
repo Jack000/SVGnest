@@ -1597,9 +1597,11 @@
 					
 					// if A and B start on a touching horizontal line, the end point may not be the start point
 					var looped = false;
-					for(i=0; i<NFP.length; i++){
-						if(_almostEqual(referencex, NFP[i].x) && _almostEqual(referencey, NFP[i].y)){
-							looped = true;
+					if(NFP.length > 0){
+						for(i=0; i<NFP.length-1; i++){
+							if(_almostEqual(referencex, NFP[i].x) && _almostEqual(referencey, NFP[i].y)){
+								looped = true;
+							}
 						}
 					}
 					
