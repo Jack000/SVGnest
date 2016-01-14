@@ -338,7 +338,8 @@
 			
 			var p = new Parallel(nfpPairs, {
 				env: {
-					binPolygon: binPolygon
+					binPolygon: binPolygon,
+					searchEdges: config.exploreConcave
 				},
 				evalPath: 'util/eval.js'
 			});
@@ -359,7 +360,7 @@
 				if(!pair || pair.length == 0){
 					return null;
 				}
-				var searchEdges = true;
+				var searchEdges = global.env.searchEdges;
 				
 				var A = rotatePolygon(pair.A, pair.key.Arotation);
 				var B = rotatePolygon(pair.B, pair.key.Brotation);

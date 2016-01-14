@@ -436,10 +436,8 @@
 						<input type="text" value="4" data-config="rotations" />
 						<h3>Part rotations</h3><span class="tooltip" title="Number of rotations to consider when inserting a part. Larger rotations will take longer to compute, and may also take longer to converge to a good solution">?</span>
 						
-						<!--
-						todo: make this flag do something
-						<input type="checkbox" class="checkbox" checked="checked" data-config="exploreConcave" />
-						<h3>Explore concave areas</h3><span class="tooltip" title="Try to solve for enclosed concave areas (eg. a jigsaw puzzle piece) This will take much longer to compute ">?</span>-->
+						<input type="checkbox" class="checkbox" data-config="exploreConcave" />
+						<h3>Explore concave areas</h3><span class="tooltip" title="Try to solve for enclosed concave areas (eg. a jigsaw puzzle piece) This will take much longer to compute ">?</span>
 						
 						<input type="text" value="10" data-config="populationSize" />
 						<h3>GA population</h3><span class="tooltip" title="The number of solutions in the Genetic Algorithm population. Larger populations will converge slower but may result in better solutions in the long run">?</span>
