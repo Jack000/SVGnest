@@ -18,7 +18,7 @@
 				
 		this.conf = {
 			tolerance: 2, // max bound for bezier->line segment conversion, in native SVG units
-			toleranceSvg: 0.002 // fudge factor for browser inaccuracy in SVG unit handling
+			toleranceSvg: 0.005 // fudge factor for browser inaccuracy in SVG unit handling
 		}; 
 	}
 	
