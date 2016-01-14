@@ -182,7 +182,6 @@ function PlacementWorker(binPolygon, paths, ids, rotations, config, nfpCache){
 				}
 				finalNfp = f;
 				
-				
 				// choose placement that results in the smallest rectangular bounding box
 				// could use convex hull instead, but it can create oddly shaped nests (triangles or long slivers) which are not optimal for real-world use
 				// todo: generalize gravity direction

@@ -334,12 +334,6 @@
 			// only keep cache for one cycle
 			nfpCache = newCache;
 			
-			// all NFPs are cached
-			if(nfpPairs.length == 0){
-				//nfpPairs.push()
-				//nfpPairs.push({A: -1, B: -1, inside: false, Arotation: 0, Brotation: 0});
-			}
-			
 			var worker = new PlacementWorker(binPolygon, placelist.slice(0), ids, rotations, config, nfpCache);
 			
 			var p = new Parallel(nfpPairs, {

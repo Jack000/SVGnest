@@ -969,7 +969,7 @@
 			var EFmin = Math.min(dotE,dotF);
 						
 			// segments that will merely touch at one point
-			if(_almostEqual(ABmax, EFmin) || _almostEqual(ABmin, EFmax)){
+			if(_almostEqual(ABmax, EFmin,TOL) || _almostEqual(ABmin, EFmax,TOL)){
 				return null;
 			}
 			// segments miss eachother completely
