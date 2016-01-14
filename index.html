@@ -49,7 +49,9 @@
 			function hideSplash(){
 				var splash = document.getElementById('splash');
 				var svgnest = document.getElementById('svgnest');
-				splash.remove();
+				if(splash){
+					splash.remove();
+				}
 				svgnest.setAttribute('style','display: block');
 			}
 			
