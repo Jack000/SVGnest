@@ -4,10 +4,12 @@ A browser-based vector nesting tool.
 
 demo: http://svgnest.com
 
+(requires SVG and webworker support). Mobile warning: running the demo is CPU intensive.
+
 references (PDF):
-[López-Camacho *et al.* 2013](http://www.cs.stir.ac.uk/~goc/papers/EffectiveHueristic2DAOR2013.pdf)
-[Kendall 2000](http://www.graham-kendall.com/papers/k2001.pdf)
-[E.K. Burke *et al.* 2006](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.440.379&rep=rep1&type=pdf)
+- [López-Camacho *et al.* 2013](http://www.cs.stir.ac.uk/~goc/papers/EffectiveHueristic2DAOR2013.pdf)
+- [Kendall 2000](http://www.graham-kendall.com/papers/k2001.pdf)
+- [E.K. Burke *et al.* 2006](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.440.379&rep=rep1&type=pdf)
 
 # What is "nesting"?
 
@@ -23,12 +25,12 @@ You may also know this as the bin packing problem and stock cutting problem.
 
 # Configuration
 
-- Space between parts: Minimum space between parts (eg. for laser kerf, CNC offset etc.)
-- Curve tolerance: The maximum error allowed for linear approximations of Bezier paths and arcs, in SVG units or "pixels"
-- Part rotations: The *possible* number of rotations to evaluate for each part. eg. 4 for only the cardinal directions. Larger values may improve results, but will be slower to converge.
-- GA population: The population size for the Genetic Algorithm
-- GA mutation rate: The probability of mutation for each gene or part placement. Values from 1-50
-- Explore concave areas: When enabled, solves the following edge case at a cost of performance and placement robustness:
+- **Space between parts:** Minimum space between parts (eg. for laser kerf, CNC offset etc.)
+- **Curve tolerance:** The maximum error allowed for linear approximations of Bezier paths and arcs, in SVG units or "pixels"
+- **Part rotations:** The *possible* number of rotations to evaluate for each part. eg. 4 for only the cardinal directions. Larger values may improve results, but will be slower to converge.
+- **GA population:** The population size for the Genetic Algorithm
+- **GA mutation rate:** The probability of mutation for each gene or part placement. Values from 1-50
+- **Explore concave areas:** When enabled, solves the following edge case at a cost of performance and placement robustness:
 
 [img]
 
@@ -36,7 +38,10 @@ You may also know this as the bin packing problem and stock cutting problem.
 
 While [good heuristics](http://cgi.csc.liv.ac.uk/~epa/surveyhtml.html) exist for the rectangular bin packing problem, in the real world we are concerned with irregular shapes.
 
-The strategy I use is made of two parts: the placement strategy (ie. how do I insert each part into a bin?) and the optimization strategy (ie. what's the best order of insertions?)
+The strategy is made of two parts:
+
+- the placement strategy (ie. how do I insert each part into a bin?)
+- and the optimization strategy (ie. what's the best order of insertions?)
 
 ## Placing the part
 
