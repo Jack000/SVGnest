@@ -992,19 +992,32 @@
 				overlap = (minMax-maxMin)/(maxMax-minMin);
 			}
 			
-			// lines are colinear
 			var crossABE = (E.y - A.y) * (B.x - A.x) - (E.x - A.x) * (B.y - A.y);
 			var crossABF = (F.y - A.y) * (B.x - A.x) - (F.x - A.x) * (B.y - A.y);
+			
+			// lines are colinear
 			if(_almostEqual(crossABE,0) && _almostEqual(crossABF,0)){
 				
 				var ABnorm = {x: B.y-A.y, y: A.x-B.x};
 				var EFnorm = {x: F.y-E.y, y: E.x-F.x};
 				
+				var ABnormlength = Math.sqrt(ABnorm.x*ABnorm.x + ABnorm.y*ABnorm.y);
+				ABnorm.x /= ABnormlength;
+				ABnorm.y /= ABnormlength;
+				
+				var EFnormlength = Math.sqrt(EFnorm.x*EFnorm.x + EFnorm.y*EFnorm.y);
+				EFnorm.x /= EFnormlength;
+				EFnorm.y /= EFnormlength;
+				
 				// segment normals must point in opposite directions
 				if(Math.abs(ABnorm.y * EFnorm.x - ABnorm.x * EFnorm.y) < TOL && ABnorm.y * EFnorm.y + ABnorm.x * EFnorm.x < 0){
 					// normal of AB segment must point in same direction as given direction vector
 					var normdot = ABnorm.y * direction.y + ABnorm.x * direction.x;
-					if(normdot < 0 && !_almostEqual(normdot,0)){
+					// the segments merely slide along eachother
+					if(_almostEqual(normdot,0, TOL)){
+						return null;
+					}
+					if(normdot < 0){
 						return 0;
 					}
 				}
