@@ -1221,7 +1221,8 @@
 		},
 		
 		// searches for an arrangement of A and B such that they do not overlap
-		searchStartPoint: function(A,B,inside){
+		// if an NFP is given, only search for startpoints that have not already been traversed in the given NFP
+		searchStartPoint: function(A,B,inside,NFP){
 			// clone arrays
 			A = A.slice(0);
 			B = B.slice(0);
@@ -1254,9 +1255,10 @@
 						if(Binside === null){ // A and B are the same
 							return null;
 						}
-												
-						if(((Binside && inside) || (!Binside && !inside)) && !this.intersect(A,B)){
-							return {x: B.offsetx, y: B.offsety};
+											
+						var startPoint = {x: B.offsetx, y: B.offsety};	
+						if(((Binside && inside) || (!Binside && !inside)) && !this.intersect(A,B) && !inNfp(startPoint, NFP)){
+							return startPoint;
 						}
 						
 						// slide B along vector
@@ -1309,15 +1311,49 @@
 								break;
 							}
 						}
-						
-						if(((Binside && inside) || (!Binside && !inside)) && !this.intersect(A,B)){
-							return {x: B.offsetx, y: B.offsety};
+						startPoint = {x: B.offsetx, y: B.offsety};
+						if(((Binside && inside) || (!Binside && !inside)) && !this.intersect(A,B) && !inNfp(startPoint, NFP)){
+							return startPoint;
 						}
 					}
 				}
 			}
+			
+			// returns true if point already exists in the given nfp
+			function inNfp(p, nfp){
+				return false;
+				if(!nfp || nfp.length == 0){
+					return false;
+				}
+				
+				for(var i=0; i<nfp.length; i++){
+					for(var j=0; j<nfp[i].length; j++){
+						if(_almostEqual(p.x, nfp[i][j].x) && _almostEqual(p.y, nfp[i][j].y)){
+							return true;
+						}
+					}
+				}
+				
+				return false;
+			}
 						
 			return null;
+		},
+		
+		isRectangle: function(poly, tolerance){
+			var bb = this.getPolygonBounds(poly);
+			tolerance = tolerance || TOL;
+			
+			for(var i=0; i<poly.length; i++){
+				if(!_almostEqual(poly[i].x, bb.x) && !_almostEqual(poly[i].x, bb.x+bb.width)){
+					return false;
+				}
+				if(!_almostEqual(poly[i].y, bb.y) && !_almostEqual(poly[i].y, bb.y+bb.height)){
+					return false;
+				}
+			}
+			
+			return true;
 		},
 		
 		// returns an interior NFP for the special case where A is a rectangle
@@ -1573,7 +1609,7 @@
 							var prevunit = {x: prevvector.x/prevlength, y:prevvector.y/prevlength};
 							
 							// we need to scale down to unit vectors to normalize vector length. Could also just do a tan here
-							if(Math.abs(unitv.y * prevunit.x - unitv.x * prevunit.y) < TOL*1000){
+							if(Math.abs(unitv.y * prevunit.x - unitv.x * prevunit.y) < 0.0001){
 								continue;
 							}
 						}
@@ -1595,7 +1631,7 @@
 					
 					if(translate === null || _almostEqual(maxd, 0)){
 						// didn't close the loop, something went wrong here
-						console.log('ERROR: ', A,B);
+						NFP = null;
 						break;
 					}
 					
@@ -1635,7 +1671,6 @@
 						break;
 					}
 					
-					
 					NFP.push({
 						x: referencex,
 						y: referencey
@@ -1647,13 +1682,17 @@
 					counter++;
 				}
 				
-				NFPlist.push(NFP);
-				startpoint = this.searchStartPoint(A,B,inside);
+				if(NFP && NFP.length > 0){
+					NFPlist.push(NFP);
+				}
 				
 				if(!searchEdges){
 					// only get outer NFP or first inner NFP
 					break;
 				}
+				
+				startpoint = this.searchStartPoint(A,B,inside,NFPlist);
+				
 			}
 			
 			return NFPlist;
