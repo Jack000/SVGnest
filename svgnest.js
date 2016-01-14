@@ -359,35 +359,90 @@
 				if(!pair || pair.length == 0){
 					return null;
 				}
+				var searchEdges = true;
+				
 				var A = rotatePolygon(pair.A, pair.key.Arotation);
 				var B = rotatePolygon(pair.B, pair.key.Brotation);
-						
+				
+				var nfp;
+				
 				if(pair.key.inside){
-					var nfp = GeometryUtil.noFitPolygonRectangle(A,B,pair.key.inside,pair.key.inside);
+					if(GeometryUtil.isRectangle(A, 0.001)){
+						nfp = GeometryUtil.noFitPolygonRectangle(A,B);
+					}
+					else{
+						nfp = GeometryUtil.noFitPolygon(A,B,true,searchEdges);
+					}
+					
+					// ensure all interior NFPs have the same winding direction
+					for(var i=0; i<nfp.length; i++){
+						if(GeometryUtil.polygonArea(nfp[i]) > 0){
+							nfp[i].reverse();
+						}
+					}
 				}
 				else{
-					var nfp = GeometryUtil.noFitPolygon(A,B,pair.key.inside,false);
-					if(!nfp){
-						console.log('ERROR:', pair.key);
+					nfp = GeometryUtil.noFitPolygon(A,B,false,searchEdges);
+					if(!nfp || nfp.length == 0){
+						log('NFP Error: ', pair.key);
+						log('A: ',JSON.stringify(A));
+						log('B: ',JSON.stringify(B));
+						return null;
 					}
+					
+					for(var i=0; i<nfp.length; i++){
+						if(!searchEdges || i==0){ // if searchedges is active, only the first NFP is guaranteed to pass sanity check
+							if(Math.abs(GeometryUtil.polygonArea(nfp[i])) < Math.abs(GeometryUtil.polygonArea(A))){
+								log('NFP Area Error: ', Math.abs(GeometryUtil.polygonArea(nfp[i])), pair.key);
+								log('NFP:', JSON.stringify(nfp[i]));
+								log('A: ',JSON.stringify(A));
+								log('B: ',JSON.stringify(B));
+								nfp.splice(i,1);
+								i--;
+							}
+						}
+					}
+					
+					if(nfp.length == 0){
+						return null;
+					}
+					
+					// for outer NFPs, the first is guaranteed to be the largest. Any subsequent NFPs that lie inside the first are holes
+					for(var i=0; i<nfp.length; i++){
+						if(GeometryUtil.polygonArea(nfp[i]) > 0){
+							nfp[i].reverse();
+						}
+						
+						if(i > 0){
+							if(GeometryUtil.pointInPolygon(nfp[i][0], nfp[0])){
+								if(GeometryUtil.polygonArea(nfp[i]) < 0){
+									nfp[i].reverse();
+								}
+							}
+						}
+					}					
 				}
 				
-				// ensure all NFPs have the same winding direction
-				for(var i=0; i<nfp.length; i++){
-					if(GeometryUtil.polygonArea(nfp[i]) > 0){
-						nfp[i].reverse();
+				function log(){
+					if(typeof console !== "undefined") {
+						console.log.apply(console,arguments);
 					}
 				}
-				
 				return {key: pair.key, value: nfp};
 			}).then(function(generatedNfp){
 				if(generatedNfp){
 					for(var i=0; i<generatedNfp.length; i++){
 						var Nfp = generatedNfp[i];
-						if(Nfp){
-							var key = JSON.stringify(Nfp.key);
-							nfpCache[key] = Nfp.value;
+						
+						if(!Nfp){
+							// if and when an error in NFP generation occurs, throw away the current population and start over. Hopefully the combination of position/rotations that caused the error does not occur again.
+							GA = null;
+							self.working = false;
+							return false;
 						}
+						
+						var key = JSON.stringify(Nfp.key);
+						nfpCache[key] = Nfp.value;
 					}
 				}
 				worker.nfpCache = nfpCache;
