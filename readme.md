@@ -1,8 +1,8 @@
-# SVGnest
+# ![SVGNest](http://svgnest.com/github/logo.png)
 
-A browser-based vector nesting tool.
+**SVGNest**: A browser-based vector nesting tool.
 
-demo: http://svgnest.com
+**Demo:** http://svgnest.com
 
 (requires SVG and webworker support). Mobile warning: running the demo is CPU intensive.
 
@@ -11,7 +11,7 @@ references (PDF):
 - [Kendall 2000](http://www.graham-kendall.com/papers/k2001.pdf)
 - [E.K. Burke *et al.* 2006](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.440.379&rep=rep1&type=pdf)
 
-# What is "nesting"?
+## What is "nesting"?
 
 Given container and a set of shapes. eg: a square piece of material and letters to be laser-cut:
 
@@ -21,7 +21,7 @@ We wish to use as few containers as possible to hold all the shapes, or simply r
 
 You may also know this as the bin packing problem and stock cutting problem.
 
-# Configuration
+## Configuration
 
 - **Space between parts:** Minimum space between parts (eg. for laser kerf, CNC offset etc.)
 - **Curve tolerance:** The maximum error allowed for linear approximations of Bezier paths and arcs, in SVG units or "pixels"
@@ -32,7 +32,7 @@ You may also know this as the bin packing problem and stock cutting problem.
 
 ![Concave flag example](http://svgnest.com/github/concave.png)
 
-# Outline of algorithm
+## Outline of algorithm
 
 While [good heuristics](http://cgi.csc.liv.ac.uk/~epa/surveyhtml.html) exist for the rectangular bin packing problem, in the real world we are concerned with irregular shapes.
 
@@ -41,7 +41,7 @@ The strategy is made of two parts:
 - the placement strategy (ie. how do I insert each part into a bin?)
 - and the optimization strategy (ie. what's the best order of insertions?)
 
-## Placing the part
+### Placing the part
 
 The key concept here is the "No Fit Polygon".
 
@@ -59,7 +59,7 @@ When two or more parts have already been placed, we can take the union of the NF
 
 This means that we need to compute O(nlogn) NFPs to complete the first packing. While there are ways to mitigate this, we take the brute-force approach which has good properties for the optimization algo.
 
-## Optimization
+### Optimization
 
 Now that we can place the parts, we need to optimize the insertion order. Here's an example of a bad insertion order:
 
@@ -73,7 +73,7 @@ To solve this, we use the "first-fit-decreasing" heuristic. Larger parts are pla
 
 While this strategy gives us a good start, we want to explore more of the solution space. We could simply randomize the insertion order, but we can probably do better with a genetic algorithm. (If you don't know what a GA is, [this article](http://www.ai-junkie.com/ga/intro/gat1.html) is a very approachable read)
 
-# Evaluating fitness
+## Evaluating fitness
 
 In our GA the insertion order and the rotation of the parts form the gene. The fitness function follows these rules:
 
@@ -85,13 +85,13 @@ The third one is rather arbitrary, as we can also optimize for rectangular bound
 
 Because small mutations in the gene cause potentially large changes in overall fitness, the individuals of the population can be very similar. By caching NFPs new individuals can be evaluated very quickly.
 
-# Performance
+## Performance
 
 ![SVGnest comparison](http://svgnest.com/github/comparison1.png)
 
 Performs similarly to commercial software, after both have run for about 5 minutes.
 
-# To-do
+## To-do
 
 - Recursive placement (putting parts in holes of other parts)
 - Customize fitness function (gravity direction, etc)
