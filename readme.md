@@ -17,7 +17,7 @@ Given container and a set of shapes. eg: a square piece of material and letters 
 
 ![letter nesting](http://svgnest.com/github/letters.png)
 
-We wish to use as few containers as possible to hold all the shapes, or simply reduce the material usage in a single container:
+We wish to use as few containers as possible to hold all the shapes, or simply reduce the material usage in a single container.
 
 You may also know this as the bin packing problem and stock cutting problem.
 
@@ -47,17 +47,15 @@ The key concept here is the "No Fit Polygon".
 
 Given polygons A and B, we want to "orbit" B around A such that they always touch but do not intersect.
 
-[img]
+![No Fit Polygon example](http://svgnest.com/github/nfp.png)
 
-The resulting orbit is the NFP. It's easy to see that if we have a part already placed, the best place to put the next part is somewhere on the NFP of parts 1 and 2.
+The resulting orbit is the NFP. The NFP contains all possible placements of B that touches the previously placed parts. We can then choose a point on the NFP as the placement position using some heuristics.
 
 Similarly we can construct an "Inner Fit Polygon" for the first part and the bin. This is the same as the NFP, except the orbiting polygon is inside the stationary one.
 
-[img]
-
 When two or more parts have already been placed, we can take the union of the NFPs of the previously placed parts.
 
-[img]
+![No Fit Polygon example](http://svgnest.com/github/nfp2.png)
 
 This means that we need to compute O(nlogn) NFPs to complete the first packing. While there are ways to mitigate this, we take the brute-force approach which has good properties for the optimization algo.
 
