@@ -13,13 +13,11 @@ references (PDF):
 
 # What is "nesting"?
 
-Given a set of shapes and a container. eg, a piece of wood and letters to be laser-cut:
+Given container and a set of shapes. eg: a square piece of material and letters to be laser-cut:
 
-[img]
+![letter nesting](http://svgnest.com/letters.png)
 
 We wish to use as few containers as possible to hold all the shapes, or simply reduce the material usage in a single container:
-
-[img]
 
 You may also know this as the bin packing problem and stock cutting problem.
 
@@ -32,7 +30,7 @@ You may also know this as the bin packing problem and stock cutting problem.
 - **GA mutation rate:** The probability of mutation for each gene or part placement. Values from 1-50
 - **Explore concave areas:** When enabled, solves the following edge case at a cost of performance and placement robustness:
 
-[img]
+![Concave flag example](http://svgnest.com/concave.png)
 
 # Outline of algorithm
 
@@ -93,9 +91,9 @@ Over successive generations, we hope that beneficial phenotypes are preserved. A
 
 # Performance
 
-[img]
+![SVGnest comparison](http://svgnest.com/comparison1.png)
 
-Appears to be on-par with commercial software, but may be slower for the initial packing.
+Performs similarly to commercial software, after both have run for about 5 minutes.
 
 # To-do
 
