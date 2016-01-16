@@ -236,9 +236,9 @@
 		var seglist = path.pathSegList;
 		var x=0, y=0, x0=0, y0=0, x1=0, y1=0, x2=0, y2=0;
 		
-		for(var i=0; i<seglist.length; i++){
-			var command = seglist[i].pathSegTypeAsLetter;
-			var s = seglist[i];
+		for(var i=0; i<seglist.numberOfItems; i++){
+			var command = seglist.getItem(i).pathSegTypeAsLetter;
+			var s = seglist.getItem(i);
 
 			if (/[MLHVCSQTA]/.test(command)){
 			  if ('x' in s) x=s.x;
@@ -413,23 +413,23 @@
 					var prevx = 0;
 					var prevy = 0;
 					
-					for(var i=0; i<seglist.length; i++){
-						var s = seglist[i];
+					for(var i=0; i<seglist.numberOfItems; i++){
+						var s = seglist.getItem(i);
 						var command = s.pathSegTypeAsLetter;
 						
 						if(command == 'H'){
 							seglist.replaceItem(element.createSVGPathSegLinetoAbs(s.x,prevy),i);
-							s = seglist[i];
+							s = seglist.getItem(i);
 						}
 						else if(command == 'V'){
 							seglist.replaceItem(element.createSVGPathSegLinetoAbs(prevx,s.y),i);
-							s = seglist[i];
+							s = seglist.getItem(i);
 						}
 						// currently only works for uniform scale, no skew
 						// todo: fully support arbitrary affine transforms...
 						else if(command == 'A'){
 							seglist.replaceItem(element.createSVGPathSegArcAbs(s.x,s.y,s.r1*scale,s.r2*scale,s.angle+rotate,s.largeArcFlag,s.sweepFlag),i);
-							s = seglist[i];
+							s = seglist.getItem(i);
 						}
 						
 						if('x' in s && 'y' in s){
@@ -557,8 +557,8 @@
 		var p;
 		
 		var lastM = 0;
-		for(var i=0; i<seglist.length; i++){
-			if(i > 0 && seglist[i].pathSegTypeAsLetter == 'M' || seglist[i].pathSegTypeAsLetter == 'm'){
+		for(var i=0; i<seglist.numberOfItems; i++){
+			if(i > 0 && seglist.getItem(i).pathSegTypeAsLetter == 'M' || seglist.getItem(i).pathSegTypeAsLetter == 'm'){
 				lastM = i;
 				break;
 			}
@@ -568,8 +568,8 @@
 			return false; // only 1 M command, no need to split
 		}
 		
-		for( i=0; i<seglist.length; i++){
-			var s = seglist[i];
+		for( i=0; i<seglist.numberOfItems; i++){
+			var s = seglist.getItem(i);
 			var command = s.pathSegTypeAsLetter;
 			
 			if(command == 'M' || command == 'm'){
@@ -607,7 +607,7 @@
 		var addedPaths = [];
 		for(i=0; i<paths.length; i++){
 			// don't add trivial paths from sequential M commands
-			if(paths[i].pathSegList.length > 1){
+			if(paths[i].pathSegList.numberOfItems > 1){
 				path.parentElement.insertBefore(paths[i], path);
 				addedPaths.push(paths[i]);
 			}
@@ -851,6 +851,7 @@
 	SvgParser.prototype.polygonify = function(element){
 		var poly = [];
 		var i;
+
 		switch(element.tagName){
 			case 'polygon':
 			case 'polyline':
@@ -932,13 +933,14 @@
 			case 'path':
 				// we'll assume that splitpath has already been run on this path, and it only has one M/m command 
 				var seglist = element.pathSegList;
-				var firstCommand = seglist[0];
-				var lastCommand = seglist[seglist.length-1];
+
+				var firstCommand = seglist.getItem(0);
+				var lastCommand = seglist.getItem(seglist.numberOfItems-1);
 
 				var x=0, y=0, x0=0, y0=0, x1=0, y1=0, x2=0, y2=0, prevx=0, prevy=0, prevx1=0, prevy1=0, prevx2=0, prevy2=0;
 				
-				for(var i=0; i<seglist.length; i++){
-					var s = seglist[i];
+				for(var i=0; i<seglist.numberOfItems; i++){
+					var s = seglist.getItem(i);
 					var command = s.pathSegTypeAsLetter;
 					
 					prevx = x;
@@ -985,7 +987,7 @@
 						case 't':
 						case 'T':
 						// implicit control point
-						if(i > 0 && /[QqTt]/.test(seglist[i-1].pathSegTypeAsLetter)){
+						if(i > 0 && /[QqTt]/.test(seglist.getItem(i-1).pathSegTypeAsLetter)){
 							x1 = prevx + (prevx-prevx1);
 							y1 = prevy + (prevy-prevy1);
 						}
@@ -1006,7 +1008,7 @@
 						break;
 						case 's':
 						case 'S':
-							if(i > 0 && /[CcSs]/.test(seglist[i-1].pathSegTypeAsLetter)){
+							if(i > 0 && /[CcSs]/.test(seglist.getItem(i-1).pathSegTypeAsLetter)){
 								x1 = prevx + (prevx-prevx2);
 								y1 = prevy + (prevy-prevy2);
 							}
