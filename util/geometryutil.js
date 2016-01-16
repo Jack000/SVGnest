@@ -1321,7 +1321,6 @@
 			
 			// returns true if point already exists in the given nfp
 			function inNfp(p, nfp){
-				return false;
 				if(!nfp || nfp.length == 0){
 					return false;
 				}
