@@ -31,17 +31,6 @@ Make sure all parts have been converted to outlines, and that no outlines overla
 
 All other outlines are automatically processed as parts for nesting.
 
-## Configuration parameters
-
-- **Space between parts:** Minimum space between parts (eg. for laser kerf, CNC offset etc.)
-- **Curve tolerance:** The maximum error allowed for linear approximations of Bezier paths and arcs, in SVG units or "pixels". Decrease this value if curved parts appear to slightly overlap.
-- **Part rotations:** The *possible* number of rotations to evaluate for each part. eg. 4 for only the cardinal directions. Larger values may improve results, but will be slower to converge.
-- **GA population:** The population size for the Genetic Algorithm
-- **GA mutation rate:** The probability of mutation for each gene or part placement. Values from 1-50
-- **Explore concave areas:** When enabled, solves the concave edge case at a cost of some performance and placement robustness:
-
-![Concave flag example](http://svgnest.com/github/concave.png)
-
 ## Outline of algorithm
 
 While [good heuristics](http://cgi.csc.liv.ac.uk/~epa/surveyhtml.html) exist for the rectangular bin packing problem, in the real world we are concerned with irregular shapes.
@@ -100,6 +89,17 @@ Because small mutations in the gene cause potentially large changes in overall f
 ![SVGnest comparison](http://svgnest.com/github/comparison1.png)
 
 Performs similarly to commercial software, after both have run for about 5 minutes.
+
+## Configuration parameters
+
+- **Space between parts:** Minimum space between parts (eg. for laser kerf, CNC offset etc.)
+- **Curve tolerance:** The maximum error allowed for linear approximations of Bezier paths and arcs, in SVG units or "pixels". Decrease this value if curved parts appear to slightly overlap.
+- **Part rotations:** The *possible* number of rotations to evaluate for each part. eg. 4 for only the cardinal directions. Larger values may improve results, but will be slower to converge.
+- **GA population:** The population size for the Genetic Algorithm
+- **GA mutation rate:** The probability of mutation for each gene or part placement. Values from 1-50
+- **Explore concave areas:** When enabled, solves the concave edge case at a cost of some performance and placement robustness:
+
+![Concave flag example](http://svgnest.com/github/concave.png)
 
 ## To-do
 
