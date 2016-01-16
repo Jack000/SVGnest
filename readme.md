@@ -13,22 +13,32 @@ references (PDF):
 
 ## What is "nesting"?
 
-Given container and a set of shapes. eg: a square piece of material and letters to be laser-cut:
+Given a square piece of material and some letters to be laser-cut:
 
 ![letter nesting](http://svgnest.com/github/letters.png)
 
-We wish to use as few containers as possible to hold all the shapes, or simply reduce the material usage in a single container.
+We want to pack all the letters into the square, using as little material as possible. If a single square is not enough, we also want to minimize the number of squares used.
 
 You may also know this as the bin packing problem and stock cutting problem.
 
-## Configuration
+SVGnest solves this problem with a geometric approach and genetic algorithm for global optimization. It works for arbitrary containers and concave edgecases:
+
+![non-rectangular shapes](http://svgnest.com/github/shapes.png)
+
+## Usage
+
+Make sure all parts have been converted to outlines, and that no outlines overlap. Upload the SVG file and select one of the outlines to be used as the bin.
+
+All other outlines are automatically processed as parts for nesting.
+
+## Configuration parameters
 
 - **Space between parts:** Minimum space between parts (eg. for laser kerf, CNC offset etc.)
-- **Curve tolerance:** The maximum error allowed for linear approximations of Bezier paths and arcs, in SVG units or "pixels"
+- **Curve tolerance:** The maximum error allowed for linear approximations of Bezier paths and arcs, in SVG units or "pixels". Decrease this value if curved parts appear to slightly overlap.
 - **Part rotations:** The *possible* number of rotations to evaluate for each part. eg. 4 for only the cardinal directions. Larger values may improve results, but will be slower to converge.
 - **GA population:** The population size for the Genetic Algorithm
 - **GA mutation rate:** The probability of mutation for each gene or part placement. Values from 1-50
-- **Explore concave areas:** When enabled, solves the following edge case at a cost of performance and placement robustness:
+- **Explore concave areas:** When enabled, solves the concave edge case at a cost of some performance and placement robustness:
 
 ![Concave flag example](http://svgnest.com/github/concave.png)
 
