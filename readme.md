@@ -19,11 +19,12 @@ Given a square piece of material and some letters to be laser-cut:
 
 We want to pack all the letters into the square, using as little material as possible. If a single square is not enough, we also want to minimize the number of squares used.
 
-You may also know this as the bin packing problem and stock cutting problem.
+In the CNC world this is called "nesting", and [software](http://www.mynesting.com/) that [does this](http://www.autodesk.com/products/trunest/overview) is typically targeted at [industrial customers](http://www.hypertherm.com/en/Products/Automated_cutting/Nesting_software/) and [very expensive](http://www.nestfab.com/pricing/).
 
-SVGnest solves this problem with a geometric approach and genetic algorithm for global optimization. It works for arbitrary containers and concave edgecases:
+SVGnest is a free and open-source alternative that solves this problem with a geometric approach, using a genetic algorithm for global optimization. It works for arbitrary containers and concave edge cases, and performs on-par with existing commercial software.
 
 ![non-rectangular shapes](http://svgnest.com/github/shapes.png)
+
 
 ## Usage
 
