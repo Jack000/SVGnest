@@ -149,7 +149,8 @@
 			}
 			
 			binPolygon = SvgParser.polygonify(bin);
-			
+			binPolygon = this.cleanPolygon(binPolygon);
+						
 			if(!binPolygon || binPolygon.length < 3){
 				return false;
 			}
@@ -511,8 +512,10 @@
 			var numChildren = paths.length;
 			for(i=0; i<numChildren; i++){
 				var poly = SvgParser.polygonify(paths[i]);
-
-				if(poly && poly.length > 2){
+				poly = this.cleanPolygon(poly);
+				
+				// todo: warn user if poly could not be processed and is excluded from the nest
+				if(poly && poly.length > 2 && Math.abs(GeometryUtil.polygonArea(poly)) > config.curveTolerance*config.curveTolerance){
 					poly.source = i;					
 					polygons.push(poly);
 				}
@@ -572,7 +575,7 @@
 								
 				return id;
 			};
-			
+
 			return polygons;
 		};
 		
@@ -584,8 +587,6 @@
 			}
 			
 			var p = this.svgToClipper(polygon);
-			
-			
 			
 			var miterLimit = 2;
 			var co = new ClipperLib.ClipperOffset(miterLimit, config.curveTolerance*config.clipperScale);
@@ -601,6 +602,37 @@
 			
 			return result;
 		};
+		
+		// returns a less complex polygon that satisfies the curve tolerance
+		this.cleanPolygon = function(polygon){
+			var p = this.svgToClipper(polygon);
+			
+			// remove self-intersections and find the biggest polygon that's left
+			var simple = ClipperLib.Clipper.SimplifyPolygon(p, ClipperLib.PolyFillType.pftNonZero);
+			
+			if(!simple || simple.length == 0){
+				return null;
+			}
+			
+			var biggest = simple[0];
+			var biggestarea = Math.abs(GeometryUtil.polygonArea(biggest));
+			for(var i=1; i<simple.length; i++){
+				var area = Math.abs(GeometryUtil.polygonArea(simple[i]));
+				if(area > biggestarea){
+					biggest = simple[i];
+					biggestarea = area;
+				}
+			}
+			
+			// clean up singularities, coincident points and edges
+			var clean = ClipperLib.Clipper.CleanPolygon(biggest, config.curveTolerance*config.clipperScale);
+						
+			if(!clean || clean.length == 0){
+				return null;
+			}
+						
+			return this.clipperToSvg(clean);
+		}
 		
 		// converts a polygon from normal float coordinates to integer coordinates used by clipper, as well as x/y -> X/Y
 		this.svgToClipper = function(polygon){
