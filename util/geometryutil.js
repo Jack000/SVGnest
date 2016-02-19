@@ -1361,6 +1361,7 @@
 			var minAy = A[0].y;
 			var maxAx = A[0].x;
 			var maxAy = A[0].y;
+			
 			for(var i=1; i<A.length; i++){
 				if(A[i].x < minAx){
 					minAx = A[i].x;
@@ -1394,6 +1395,14 @@
 					maxBy = B[i].y;
 				}
 			}
+			
+			if(maxBx-minBx > maxAx-minAx){
+				return null;
+			}
+			if(maxBy-minBy > maxAy-minAy){
+				return null;
+			}
+			
 			return [[
 			{x: minAx-minBx+B[0].x, y: minAy-minBy+B[0].y},
 			{x: maxAx-maxBx+B[0].x, y: minAy-minBy+B[0].y},
