@@ -210,10 +210,16 @@
 					return
 				}
 				
-				var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+				var svg;
+				svg = display.querySelector('svg');
+				
+				if(!svg){
+					svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+				}
+				
+				svg = svg.cloneNode(false);
 				
 				var binHeight = parseInt(bins.children[0].getAttribute('height'));
-				svg.setAttribute('viewBox', bins.children[0].getAttribute('viewBox'));
 				
 				for(i=0; i<bins.children.length; i++){
 					var b = bins.children[i];
