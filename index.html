@@ -327,7 +327,7 @@
 			
 			var iterations = 0;
 			
-			function renderSvg(svglist, efficiency){
+			function renderSvg(svglist, efficiency, numplaced){
 				iterations++;
 				document.getElementById('info_iterations').innerHTML = iterations;
 				
@@ -347,6 +347,8 @@
 				if(efficiency || efficiency === 0){
 					document.getElementById('info_efficiency').innerHTML = Math.round(efficiency*100);
 				}
+				
+				document.getElementById('info_placed').innerHTML = numplaced;
 				
 				document.getElementById('info_placement').setAttribute('style','display: block');
 				display.setAttribute('style','display: none');
@@ -467,6 +469,11 @@
 					<div class="column right">
 						<h1 class="label" id="info_iterations"></h1>
 						<span class="subscript">Iterations</span>
+					</div>
+					
+					<div class="column left">
+						<h1 class="label"><span id="info_placed"></span></h1>
+						<span class="subscript">Parts placed</span>
 					</div>
 				</div>
 				</div>				

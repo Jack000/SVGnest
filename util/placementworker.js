@@ -74,6 +74,7 @@ function PlacementWorker(binPolygon, paths, ids, rotations, config, nfpCache){
 		var allplacements = [];
 		var fitness = 0;
 		var binarea = Math.abs(GeometryUtil.polygonArea(self.binPolygon));
+		var key, nfp;
 		
 		while(paths.length > 0){
 			
@@ -83,10 +84,30 @@ function PlacementWorker(binPolygon, paths, ids, rotations, config, nfpCache){
 
 			for(i=0; i<paths.length; i++){
 				path = paths[i];
-				var key = JSON.stringify({A:-1,B:path.id,inside:true,Arotation:0,Brotation:path.rotation});
+				
+				// inner NFP
+				key = JSON.stringify({A:-1,B:path.id,inside:true,Arotation:0,Brotation:path.rotation});
 				var binNfp = self.nfpCache[key];
 				
+				// part unplaceable, skip
 				if(!binNfp || binNfp.length == 0){
+					continue;
+				}
+				
+				// ensure all necessary NFPs exist
+				var error = false;
+				for(j=0; j<placed.length; j++){			
+					key = JSON.stringify({A:placed[j].id,B:path.id,inside:false,Arotation:placed[j].rotation,Brotation:path.rotation});
+					nfp = self.nfpCache[key];
+										
+					if(!nfp){
+						error = true;
+						break;
+					}	
+				}
+				
+				// part unplaceable, skip
+				if(error){
 					continue;
 				}
 				
@@ -124,8 +145,8 @@ function PlacementWorker(binPolygon, paths, ids, rotations, config, nfpCache){
 				
 				
 				for(j=0; j<placed.length; j++){			
-					var key = JSON.stringify({A:placed[j].id,B:path.id,inside:false,Arotation:placed[j].rotation,Brotation:path.rotation});
-					var nfp = self.nfpCache[key];
+					key = JSON.stringify({A:placed[j].id,B:path.id,inside:false,Arotation:placed[j].rotation,Brotation:path.rotation});
+					nfp = self.nfpCache[key];
 										
 					if(!nfp){
 						continue;

@@ -377,14 +377,23 @@
 					}
 					
 					// ensure all interior NFPs have the same winding direction
-					for(var i=0; i<nfp.length; i++){
-						if(GeometryUtil.polygonArea(nfp[i]) > 0){
-							nfp[i].reverse();
+					if(nfp && nfp.length > 0){
+						for(var i=0; i<nfp.length; i++){
+							if(GeometryUtil.polygonArea(nfp[i]) > 0){
+								nfp[i].reverse();
+							}
 						}
+					}
+					else{
+						// warning on null inner NFP
+						// this is not an error, as the part may simply be larger than the bin or otherwise unplaceable due to geometry
+						log('NFP Warning: ', pair.key);
 					}
 				}
 				else{
 					nfp = GeometryUtil.noFitPolygon(A,B,false,searchEdges);
+					
+					// sanity check
 					if(!nfp || nfp.length == 0){
 						log('NFP Error: ', pair.key);
 						log('A: ',JSON.stringify(A));
@@ -400,7 +409,7 @@
 								log('A: ',JSON.stringify(A));
 								log('B: ',JSON.stringify(B));
 								nfp.splice(i,1);
-								i--;
+								return null;
 							}
 						}
 					}
@@ -435,16 +444,12 @@
 				if(generatedNfp){
 					for(var i=0; i<generatedNfp.length; i++){
 						var Nfp = generatedNfp[i];
-						
-						if(!Nfp){
-							// if and when an error in NFP generation occurs, throw away the current population and start over. Hopefully the combination of position/rotations that caused the error does not occur again.
-							GA = null;
-							self.working = false;
-							return false;
+												
+						if(Nfp){
+							// a null nfp means the nfp could not be generated, either because the parts simply don't fit or an error in the nfp algo
+							var key = JSON.stringify(Nfp.key);
+							nfpCache[key] = Nfp.value;
 						}
-						
-						var key = JSON.stringify(Nfp.key);
-						nfpCache[key] = Nfp.value;
 					}
 				}
 				worker.nfpCache = nfpCache;
@@ -482,13 +487,17 @@
 						
 						var placedArea = 0;
 						var totalArea = 0;
+						var numParts = placelist.length;
+						var numPlacedParts = 0;
+						
 						for(i=0; i<best.placements.length; i++){
 							totalArea += Math.abs(GeometryUtil.polygonArea(binPolygon));
 							for(var j=0; j<best.placements[i].length; j++){
 								placedArea += Math.abs(GeometryUtil.polygonArea(tree[best.placements[i][j].id]));
+								numPlacedParts++;
 							}
 						}
-						displayCallback(self.applyPlacement(best.placements), placedArea/totalArea);
+						displayCallback(self.applyPlacement(best.placements), placedArea/totalArea, numPlacedParts+'/'+numParts);
 					}
 					else{
 						displayCallback();

@@ -240,6 +240,7 @@ margin-bottom: 2em;
 
 .column.left{
 float: left;
+clear: left;
 }
 
 .column.right{
