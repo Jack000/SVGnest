@@ -377,28 +377,28 @@ overflow: visible;
 }
 
 #select svg *{
-fill: #fff;
-fill-opacity: 0;
-stroke: #82b64b;
-stroke-width: 2px;
-vector-effect: non-scaling-stroke;
-stroke-linejoin: round;
+fill: #fff !important;
+fill-opacity: 0 !important;
+stroke: #82b64b !important;
+stroke-width: 2px !important;
+vector-effect: non-scaling-stroke !important;
+stroke-linejoin: round !important;
 }
 
 #select svg *:hover{
-stroke: #485f7a;
-cursor: pointer;
+stroke: #485f7a !important;
+cursor: pointer !important;
 }
 
 #select svg *.active{
-stroke: #344860;
-stroke-width: 3px;
+stroke: #344860 !important;
+stroke-width: 3px !important;
 }
 
 #select.disabled svg *, #select.disabled svg *:hover, #select.disabled svg *.active{
-stroke: #9b9da2;
-stroke-width: 2px;
-cursor: default;
+stroke: #9b9da2 !important;
+stroke-width: 2px !important;
+cursor: default !important;
 }
 
 #bins svg{
@@ -413,22 +413,23 @@ min-width: 20em;
 }
 
 #bins svg *{
-fill: #485f7a;
-stroke: #344860;
-stroke-width: 2px;
-vector-effect: non-scaling-stroke;
-stroke-linejoin: round;
+fill: #485f7a !important;
+stroke: #344860 !important;
+stroke-width: 2px !important;
+vector-effect: non-scaling-stroke !important;
+stroke-linejoin: round !important;
 }
 
 #bins svg .bin{
-fill: #ffffff;
-stroke: #e1e1e6;
+fill: #ffffff !important;
+stroke: #e1e1e6 !important;
 }
 
 #bins svg .hole{
-fill: #ffffff;
-stroke: #344860;
+fill: #ffffff !important;
+stroke: #344860 !important;
 }
+
 /* messages */
 
 #messagewrapper{
