@@ -141,6 +141,16 @@ background-position: 1.8em 50%;
 padding-left: 3.9em;
 }
 
+.button.zoomin{
+background: #fff url(img/zoomin.svg) no-repeat;
+background-size: 1.5em 1.5em;
+}
+
+.button.zoomout{
+background: #fff url(img/zoomout.svg) no-repeat;
+background-size: 1.5em 1.5em;
+}
+
 .button:hover{
 color: #9dc86f;
 box-shadow: 0 2px 1px #d7dae1;
@@ -269,7 +279,7 @@ overflow: hidden;
 width: 20em;
 position: absolute;
 top: 0;
-right: 0.5em;
+left: 24.5em;
 background-color: #fff;
 border-radius: 0.5em;
 transition: max-height  0.5s;
@@ -289,6 +299,17 @@ box-shadow: 0 2px 1px #d7dae1;
 #configbutton{
 position: relative;
 z-index: 2;
+width: 3em;
+padding: 0;
+height: 2.5em;
+background-position: 50%;
+}
+
+#zoominbutton, #zoomoutbutton{
+width: 3em;
+padding: 0;
+height: 2.5em;
+background-position: 50%;
 }
 
 #configbutton.close:hover{

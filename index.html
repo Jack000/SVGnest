@@ -118,8 +118,11 @@
 			var configbutton = document.getElementById('configbutton');
 			var configsave = document.getElementById('configsave');
 			
+			var zoomin = document.getElementById('zoominbutton');
+			var zoomout = document.getElementById('zoomoutbutton');
 			
 			var isworking = false;
+			
 			start.onclick = function(){
 				iterations = 0;
 				if(isworking){
@@ -139,6 +142,8 @@
 				start.className = 'button spinner';
 				configbutton.className = 'button config disabled';
 				config.className = '';
+				zoomin.className = 'button zoomin disabled';
+				zoomout.className = 'button zoomout disabled';
 				isworking = true;
 			}
 			
@@ -147,6 +152,8 @@
 				startlabel.innerHTML = 'Start Nest';
 				start.className = 'button start';
 				configbutton.className = 'button config';
+				zoomin.className = 'button zoomin';
+				zoomout.className = 'button zoomout';
 				isworking = false;
 			}
 			
@@ -234,6 +241,33 @@
 				
 				var blob = new Blob([svg.outerHTML], {type: "image/svg+xml;charset=utf-8"});
 				saveAs(blob, "SVGnest-output.svg");
+			}
+			
+			var zoomlevel = 1.0;
+			
+			zoomin.onclick = function(){
+				if(this.className == 'button zoomin disabled'){
+					return false;
+				}
+				zoomlevel *= 1.2;
+				var svg = document.querySelector('#select svg');
+				if(svg){
+					svg.setAttribute('style', 'transform-origin: top left; transform:scale('+zoomlevel+'); -webkit-transform:scale('+zoomlevel+'); -moz-transform:scale('+zoomlevel+'); -ms-transform:scale('+zoomlevel+'); -o-transform:scale('+zoomlevel+');');
+				}
+			}
+			
+			zoomout.onclick = function(){
+				if(this.className == 'button zoomout disabled'){
+					return false;
+				}
+				zoomlevel *= 0.8;
+				if(zoomlevel < 0.02){
+					zoomlevel = 0.02;
+				}
+				var svg = document.querySelector('#select svg');
+				if(svg){
+					svg.setAttribute('style', 'transform-origin: top left; transform:scale('+zoomlevel+'); -webkit-transform:scale('+zoomlevel+'); -moz-transform:scale('+zoomlevel+'); -ms-transform:scale('+zoomlevel+'); -o-transform:scale('+zoomlevel+');');
+				}
 			}
 			
 			fileinput.onchange = function(e){			
@@ -435,7 +469,9 @@
 				<ul class="nav">
 				<li class="button start disabled" id="start"><span id="startlabel">Start Nest</span></li>
 				<li class="button download disabled" id="download">Download SVG</li>
-				<li class="button config" id="configbutton">Configuration</li>
+				<li class="button config" id="configbutton"></li>
+				<li class="button zoomin" id="zoominbutton"></li>
+				<li class="button zoomout" id="zoomoutbutton"></li>
 				</ul>
 				
 				<div id="config">
