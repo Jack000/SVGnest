@@ -144,6 +144,12 @@
 				config.className = '';
 				zoomin.className = 'button zoomin disabled';
 				zoomout.className = 'button zoomout disabled';
+				
+				var svg = document.querySelector('#select svg');
+				if(svg){
+					svg.removeAttribute('style');
+				}
+				
 				isworking = true;
 			}
 			
@@ -152,8 +158,7 @@
 				startlabel.innerHTML = 'Start Nest';
 				start.className = 'button start';
 				configbutton.className = 'button config';
-				zoomin.className = 'button zoomin';
-				zoomout.className = 'button zoomout';
+				
 				isworking = false;
 			}
 			
