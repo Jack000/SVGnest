@@ -21,10 +21,13 @@ We want to pack all the letters into the square, using as little material as pos
 
 In the CNC world this is called "nesting", and [software](http://www.mynesting.com/) that [does this](http://www.autodesk.com/products/trunest/overview) is typically targeted at [industrial customers](http://www.hypertherm.com/en/Products/Automated_cutting/Nesting_software/) and [very expensive](http://www.nestfab.com/pricing/).
 
-SVGnest is a free and open-source alternative that solves this problem with a geometric approach, using a genetic algorithm for global optimization. It works for arbitrary containers and concave edge cases, and performs on-par with existing commercial software.
+SVGnest is a free and open-source alternative that solves this problem with the orbital approach outlined in [E.K. Burke *et al.* 2006], using a genetic algorithm for global optimization. It works for arbitrary containers and concave edge cases, and performs on-par with existing commercial software.
 
 ![non-rectangular shapes](http://svgnest.com/github/shapes.png)
 
+It also features part-in-part support, for placing parts in the holes of other parts.
+
+![non-rectangular shapes](http://svgnest.com/github/recursion.png)
 
 ## Usage
 
@@ -98,13 +101,14 @@ Performs similarly to commercial software, after both have run for about 5 minut
 - **Part rotations:** The *possible* number of rotations to evaluate for each part. eg. 4 for only the cardinal directions. Larger values may improve results, but will be slower to converge.
 - **GA population:** The population size for the Genetic Algorithm
 - **GA mutation rate:** The probability of mutation for each gene or part placement. Values from 1-50
+- **Part in part:** When enabled, places parts in the holes of other parts. This is off by default as it can be resource intensive
 - **Explore concave areas:** When enabled, solves the concave edge case at a cost of some performance and placement robustness:
 
 ![Concave flag example](http://svgnest.com/github/concave.png)
 
 ## To-do
 
-- Recursive placement (putting parts in holes of other parts)
+- ~~Recursive placement (putting parts in holes of other parts)~~
 - Customize fitness function (gravity direction, etc)
 - kill worker threads when stop button is clicked
 - fix certain edge cases in NFP generation
