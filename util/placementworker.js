@@ -24,9 +24,9 @@ function toNestCoordinates(polygon, scale){
 	return clone;
 };
 
-function rotatePolygon(polygon, angle){
+function rotatePolygon(polygon, degrees){
 	var rotated = [];
-	angle = angle * Math.PI / 180;
+	angle = degrees * Math.PI / 180;
 	for(var i=0; i<polygon.length; i++){
 		var x = polygon[i].x;
 		var y = polygon[i].y;
@@ -34,6 +34,13 @@ function rotatePolygon(polygon, angle){
 		var y1 = x*Math.sin(angle)+y*Math.cos(angle);
 						
 		rotated.push({x:x1, y:y1});
+	}
+	
+	if(polygon.children && polygon.children.length > 0){
+		rotated.children = [];
+		for(var j=0; j<polygon.children.length; j++){
+			rotated.children.push(rotatePolygon(polygon.children[j], degrees));
+		}
 	}
 	
 	return rotated;

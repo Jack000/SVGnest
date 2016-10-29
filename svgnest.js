@@ -28,6 +28,7 @@
 			rotations: 4,
 			populationSize: 10,
 			mutationRate: 10,
+			useHoles: false,
 			exploreConcave: false
 		};
 		
@@ -51,7 +52,7 @@
 			svg = SvgParser.clean();
 			
 			tree = this.getParts(svg.children);
-			
+
 			//re-order elements such that deeper elements are on top, so they can be moused over
 			function zorder(paths){
 				// depth-first
@@ -100,6 +101,10 @@
 				config.mutationRate = parseInt(c.mutationRate);
 			}
 			
+			if('useHoles' in c){
+				config.useHoles = !!c.useHoles;
+			}
+			
 			if('exploreConcave' in c){
 				config.exploreConcave = !!c.exploreConcave;
 			}
@@ -110,6 +115,7 @@
 			nfpCache = {};
 			binPolygon = null;
 			GA = null;
+						
 			return config;
 		}
 		
@@ -132,7 +138,7 @@
 			tree = this.getParts(parts.slice(0));
 			
 			offsetTree(tree, 0.5*config.spacing, this.polygonOffset.bind(this));
-						
+
 			// offset tree recursively
 			function offsetTree(t, offset, offsetFunction){
 				for(var i=0; i<t.length; i++){
@@ -273,7 +279,7 @@
 			if(GA === null){
 				// initiate new GA
 				var adam = tree.slice(0);
-				
+
 				// seed with decreasing area
 				adam.sort(function(a, b){
 					return Math.abs(GeometryUtil.polygonArea(b)) - Math.abs(GeometryUtil.polygonArea(a));
@@ -340,7 +346,8 @@
 			var p = new Parallel(nfpPairs, {
 				env: {
 					binPolygon: binPolygon,
-					searchEdges: config.exploreConcave
+					searchEdges: config.exploreConcave,
+					useHoles: config.useHoles
 				},
 				evalPath: 'util/eval.js'
 			});
@@ -362,10 +369,11 @@
 					return null;
 				}
 				var searchEdges = global.env.searchEdges;
+				var useHoles = global.env.useHoles;
 				
 				var A = rotatePolygon(pair.A, pair.key.Arotation);
 				var B = rotatePolygon(pair.B, pair.key.Brotation);
-				
+
 				var nfp;
 				
 				if(pair.key.inside){
@@ -431,7 +439,32 @@
 								}
 							}
 						}
-					}					
+					}
+					
+					// generate nfps for children (holes of parts) if any exist
+					if(useHoles && A.children && A.children.length > 0){
+						var Bbounds = GeometryUtil.getPolygonBounds(B);
+						
+						for(var i=0; i<A.children.length; i++){
+							var Abounds = GeometryUtil.getPolygonBounds(A.children[i]);
+
+							// no need to find nfp if B's bounding box is too big
+							if(Abounds.width > Bbounds.width && Abounds.height > Bbounds.height){
+							
+								var cnfp = GeometryUtil.noFitPolygon(A.children[i],B,true,true);
+								// ensure all interior NFPs have the same winding direction
+								if(cnfp && cnfp.length > 0){
+									for(var j=0; j<cnfp.length; j++){
+										if(GeometryUtil.polygonArea(cnfp[j]) < 0){
+											cnfp[j].reverse();
+										}
+										nfp.push(cnfp[j]);
+									}
+								}
+							
+							}
+						}
+					}
 				}
 				
 				function log(){
@@ -439,6 +472,7 @@
 						console.log.apply(console,arguments);
 					}
 				}
+				
 				return {key: pair.key, value: nfp};
 			}).then(function(generatedNfp){
 				if(generatedNfp){
@@ -529,7 +563,7 @@
 					polygons.push(poly);
 				}
 			}
-			
+						
 			// turn the list into a tree
 			toTree(polygons);
 			
@@ -584,7 +618,7 @@
 								
 				return id;
 			};
-
+			
 			return polygons;
 		};
 		
@@ -615,7 +649,6 @@
 		// returns a less complex polygon that satisfies the curve tolerance
 		this.cleanPolygon = function(polygon){
 			var p = this.svgToClipper(polygon);
-			
 			// remove self-intersections and find the biggest polygon that's left
 			var simple = ClipperLib.Clipper.SimplifyPolygon(p, ClipperLib.PolyFillType.pftNonZero);
 			
@@ -624,15 +657,15 @@
 			}
 			
 			var biggest = simple[0];
-			var biggestarea = Math.abs(GeometryUtil.polygonArea(biggest));
+			var biggestarea = Math.abs(ClipperLib.Clipper.Area(biggest));
 			for(var i=1; i<simple.length; i++){
-				var area = Math.abs(GeometryUtil.polygonArea(simple[i]));
+				var area = Math.abs(ClipperLib.Clipper.Area(simple[i]));
 				if(area > biggestarea){
 					biggest = simple[i];
 					biggestarea = area;
 				}
 			}
-			
+
 			// clean up singularities, coincident points and edges
 			var clean = ClipperLib.Clipper.CleanPolygon(biggest, config.curveTolerance*config.clipperScale);
 						
@@ -685,7 +718,7 @@
 				binclone.setAttribute('class','bin');
 				binclone.setAttribute('transform','translate('+(-binBounds.x)+' '+(-binBounds.y)+')');
 				newsvg.appendChild(binclone);
-				
+
 				for(j=0; j<placement[i].length; j++){
 					var p = placement[i][j];
 					var part = tree[p.id];
@@ -696,7 +729,6 @@
 					partgroup.appendChild(clone[part.source]);
 					
 					if(part.children && part.children.length > 0){
-						
 						var flattened = _flattenTree(part.children, true);
 						for(k=0; k<flattened.length; k++){
 							

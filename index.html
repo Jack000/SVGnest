@@ -124,6 +124,9 @@
 			var isworking = false;
 			
 			start.onclick = function(){
+				if(this.className == 'start button disabled'){
+					return false;
+				}
 				iterations = 0;
 				if(isworking){
 					stopnest();
@@ -495,6 +498,9 @@
 						
 						<input type="text" value="10" data-config="mutationRate" />
 						<h3>GA mutation rate</h3><span class="tooltip" title="Mutation rate (in percent) at each generation of the Genetic Algorithm. A 100% mutation rate is equivalent to random sampling">?</span>
+						
+						<input type="checkbox" class="checkbox" data-config="useHoles" />
+						<h3>Part in Part</h3><span class="tooltip" title="Place parts in the holes of other parts. This will take much longer to compute ">?</span>
 						
 						<input type="checkbox" class="checkbox" data-config="exploreConcave" />
 						<h3>Explore concave areas</h3><span class="tooltip" title="Try to solve for enclosed concave areas (eg. a jigsaw puzzle piece) This will take much longer to compute ">?</span>
