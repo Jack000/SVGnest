@@ -451,7 +451,7 @@
 							// no need to find nfp if B's bounding box is too big
 							if(Abounds.width > Bbounds.width && Abounds.height > Bbounds.height){
 							
-								var cnfp = GeometryUtil.noFitPolygon(A.children[i],B,true,true);
+								var cnfp = GeometryUtil.noFitPolygon(A.children[i],B,true,searchEdges);
 								// ensure all interior NFPs have the same winding direction
 								if(cnfp && cnfp.length > 0){
 									for(var j=0; j<cnfp.length; j++){
