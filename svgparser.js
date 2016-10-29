@@ -667,12 +667,10 @@
 		}
 		
 		// do not include last point if coincident with starting point
-		if(poly.length > 0){
-			while(GeometryUtil.almostEqual(poly[0].x,poly[poly.length-1].x, this.conf.toleranceSvg) && GeometryUtil.almostEqual(poly[0].y,poly[poly.length-1].y, this.conf.toleranceSvg)){
-				poly.pop();
-			}
+		while(poly.length > 0 && GeometryUtil.almostEqual(poly[0].x,poly[poly.length-1].x, this.conf.toleranceSvg) && GeometryUtil.almostEqual(poly[0].y,poly[poly.length-1].y, this.conf.toleranceSvg)){
+			poly.pop();
 		}
-		
+
 		return poly;
 	};
 	
