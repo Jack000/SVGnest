@@ -2,7 +2,7 @@ body, html{
 margin: 0;
 padding: 0;
 border: 0;
-font: 400 22px/1.4 'latolight', helvetica, arial, verdana, sans-serif;
+font: normal 22px/1.4 'LatoLatinWeb', helvetica, arial, verdana, sans-serif;
 background: #eeeff2 url(img/background.png) repeat;
 color: #8b8b8b;
 }
@@ -19,21 +19,21 @@ text-decoration: underline;
 
 h1{
 font-size: 1.5em;
-font-weight: 700;
+font-weight: bold;
 margin: 1.5em 0 0.5em 0;
 color: #344860;
 }
 
 h2{
 font-size: 1.2em;
-font-weight: 700;
+font-weight: bold;
 margin: 1em 0 0.5em 0;
 color: #344860;
 }
 
 h3{
 font-size: 1em;
-font-weight: 700;
+font-weight: bold;
 margin: 1em 0 0.2em 0;
 color: #344860;
 }
@@ -237,6 +237,7 @@ font-size: 4em;
 margin: 0.2em 0 0 0;
 padding: 0;
 line-height: 1;
+font-weight: normal;
 }
 
 h1.label sup{
@@ -364,7 +365,7 @@ max-width: 15%;
 width: 1.5em;
 height: 1.5em;
 font-size: 0.8em;
-font-weight: 700;
+font-weight: bold;
 background-color: #fff;
 background-color: #8aba5a;
 color: #fff;
@@ -484,7 +485,7 @@ cursor: pointer;
 
 #message.error{
 color: #ff314e;
-font-weight: 700;
+font-weight: bold;
 }
 
 
