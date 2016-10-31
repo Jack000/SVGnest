@@ -2,7 +2,7 @@ body, html{
 margin: 0;
 padding: 0;
 border: 0;
-font: 400 22px/1.4 'Lato', helvetica, arial, verdana, sans-serif;
+font: 400 22px/1.4 'latolight', helvetica, arial, verdana, sans-serif;
 background: #eeeff2 url(img/background.png) repeat;
 color: #8b8b8b;
 }
