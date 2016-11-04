@@ -3,56 +3,63 @@ margin: 0;
 padding: 0;
 border: 0;
 font: normal 22px/1.4 'LatoLatinWeb', helvetica, arial, verdana, sans-serif;
-background: #eeeff2 url(img/background.png) repeat;
+background-color: #fff;
 color: #8b8b8b;
 }
 
 a{
-color: #82b64b;
+color: #3bb34a;
 text-decoration: none;
 }
 
 a:hover{
-color: #9dc86f;
+color: #55c960;
 text-decoration: underline;
 }
 
 h1{
 font-size: 1.5em;
-font-weight: bold;
+font-family: 'LatoLatinWebLight', helvetica, arial, verdana, sans-serif;
+font-weight: normal;
 margin: 1.5em 0 0.5em 0;
-color: #344860;
+color: #617bb5;
 }
 
 h2{
-font-size: 1.2em;
+font-size: 1.1em;
 font-weight: bold;
-margin: 1em 0 0.5em 0;
-color: #344860;
+margin: 0 0 0.5em 0;
+color: #8498d1;
 }
 
 h3{
 font-size: 1em;
 font-weight: bold;
 margin: 1em 0 0.2em 0;
-color: #344860;
+color: #8498d1;
 }
 
 #splash{
 width: 28em;
-margin: 12% auto 0 auto;
+margin: 10% auto 0 auto;
 }
 
 #splash .logo{
+width: 50%;
 margin: 0;
-width: 100%;
+margin-left: 25%;
 height: auto;
 }
 
-#splash .tagline{
-float: right;
-margin: 0.75em 7% 0.2em 0;
-clear: both;
+#splash h1{
+color: #37b34a;
+}
+
+#splash h1.title{
+font-size: 3.5em;
+margin: 0;
+padding: 0;
+text-align: center;
 }
 
 .subscript{
@@ -60,10 +67,12 @@ font-size: 0.75em;
 }
 
 #splash .subscript{
-float: right;
-margin-right: 7%;
-clear: both;
+display: block;
+color: #3bb34a;
+font-size: 1.45em;
+text-align: center;
 font-style: normal;
+
 }
 
 .nav{
@@ -84,8 +93,9 @@ margin: 0 0.5em;
 padding: 0.6em 2.4em;
 background-color: #fff;
 border-radius: 5em;
+border: 2px solid #d7e9b7;
 cursor: pointer;
-color: #82b64b;
+color: #3bb34a;
 }
 
 .button a:hover{
@@ -152,7 +162,7 @@ background-size: 1.5em 1.5em;
 }
 
 .button:hover{
-color: #9dc86f;
+color: #55c960;
 box-shadow: 0 2px 1px #d7dae1;
 text-decoration: none;
 }
@@ -182,7 +192,7 @@ box-shadow: none;
 #splash .nav{
 float: left;
 width: 150%;
-margin: 4em 0 0 -15%;
+margin: 4em 0 0 -20%;
 }
 
 #faq{
@@ -209,9 +219,14 @@ width: 22%;
 margin-right: 8%;
 }
 
+#svgnest .sidebar h1{
+font-size: 3em;
+}
+
 #svgnest .sidebar{
-clear: left;
-margin-top: 5em;
+clear: both;
+width: 100%;
+margin-top: 3em;
 }
 
 #svgnest .nav{
@@ -221,7 +236,7 @@ padding: 0;
 }
 
 #controls{
-margin-top: 7em;
+margin-top: 1em;
 float: left;
 position: relative;
 }
@@ -245,32 +260,24 @@ font-size: 0.5em;
 }
 
 .column{
-width: 50%;
-margin-bottom: 2em;
-}
-
-.column.left{
+margin: 0.5em 4em 2em 0;
 float: left;
-clear: left;
 }
 
-.column.right{
-float: right;
-text-align: right;
-}
 
 .progress{
-width: 100%;
+width: 51%;
 clear: both;
 height: 1.2em;
 background-color: #fff;
+border: 2px solid #617bb5;
 border-radius: 1em;
 margin-bottom: 0.4em;
 }
 
 .progress_inner{
 height: 100%;
-background-color: #344860;
+background-color: #617bb5;
 border-radius: 1em;
 }
 
@@ -384,10 +391,13 @@ margin-top: 2em;
 
 /* svg styles*/ 
 
+#select{
+margin-top: 2em;
+}
+
 #select, #bins{
 float: left;
 width: 69%;
-margin-top: 4em;
 }
 
 #select svg, #bins svg{
@@ -401,19 +411,19 @@ overflow: visible;
 #select svg *{
 fill: #fff !important;
 fill-opacity: 0 !important;
-stroke: #82b64b !important;
+stroke: #3bb34a !important;
 stroke-width: 2px !important;
 vector-effect: non-scaling-stroke !important;
 stroke-linejoin: round !important;
 }
 
 #select svg *:hover{
-stroke: #485f7a !important;
+stroke: #075911 !important;
 cursor: pointer !important;
 }
 
 #select svg *.active{
-stroke: #344860 !important;
+stroke: #06380c !important;
 stroke-width: 3px !important;
 }
 
@@ -435,8 +445,8 @@ min-width: 20em;
 }
 
 #bins svg *{
-fill: #485f7a !important;
-stroke: #344860 !important;
+fill: #8498d1 !important;
+stroke: #617bb5 !important;
 stroke-width: 2px !important;
 vector-effect: non-scaling-stroke !important;
 stroke-linejoin: round !important;
@@ -444,12 +454,12 @@ stroke-linejoin: round !important;
 
 #bins svg .bin{
 fill: #ffffff !important;
-stroke: #e1e1e6 !important;
+stroke: #8498d1 !important;
 }
 
 #bins svg .hole{
 fill: #ffffff !important;
-stroke: #344860 !important;
+stroke: #617bb5 !important;
 }
 
 /* messages */
@@ -457,7 +467,7 @@ stroke: #344860 !important;
 #messagewrapper{
 width: 50em;
 overflow: hidden;
-background: #fff url(img/close.svg) no-repeat;
+background: #8498d1 url(img/close.svg) no-repeat;
 background-position: 99% 0.5em;
 background-size: 3em 3em;
 line-height: 4em;
@@ -467,10 +477,11 @@ margin-left: -25em;
 bottom: 1em;
 text-align: center;
 border-radius: 0.5em;
+color: #fff;
 }
 
 #messagewrapper:hover{
-background-color: #f4f4f5;
+background-color: #a2b4dd;
 }
 
 #message{
@@ -598,6 +609,10 @@ font-weight: bold;
 	#svgnest, #messagewrapper{
 	width: 60em;
 	}
+	
+	.progress{
+	width: 61%;
+	}
 }
 
 @media only screen and (max-width: 1500px) {
@@ -625,5 +640,9 @@ font-weight: bold;
 	
 	h1.label{
 	font-size: 3em;
+	}
+	
+	.progress{
+	width: 75%;
 	}
 }

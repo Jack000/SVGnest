@@ -126,7 +126,7 @@
 			var isworking = false;
 			
 			start.onclick = function(){
-				if(this.className == 'start button disabled'){
+				if(this.className == 'button start disabled'){
 					return false;
 				}
 				iterations = 0;
@@ -312,7 +312,7 @@
 						hideSplash();
 						message.innerHTML = 'Click on the outline to use as the bin';
 						message.className = 'active animated bounce';
-						start.className = 'start button disabled';
+						start.className = 'button start disabled';
 						
 						attachSvgListeners(svg);
 					}
@@ -444,8 +444,8 @@
 		<div id="splash">
 			<!-- a small splash page that explains what this thing is -->
 			<img src="img/logo.svg" alt="SVGnest" class="logo" />
-			<h1 class="tagline">Open Source vector nesting</h1>
-			<em class="subscript">created by <a href="http://www.jack.works" target="_blank">Jack Qiao</a></em>
+			<h1 class="title">SVGnest</h1>
+			<em class="subscript">Open Source nesting</em>
 			
 			<ul class="nav">
 				<li class="button start" id="demo">Demo</li>
@@ -456,11 +456,14 @@
 			
 			<div id="faq">
 				<h1>What exactly is "nesting"?</h1>
-				<p>We have some (2d) parts to cut and a piece of material, we want to arrange the parts to use as little material as possible. This is a common problem if you use a laser cutter, plasma cutter, CNC machine etc.</p>
+				<p>If you have some parts to cut out of a piece of metal/plastic/wood etc, you'd want to arrange the parts to use as little material as possible. This is a common problem if you use a laser cutter, plasma cutter, or CNC machine.</p>
 				<p>In computer terms this is called the irregular bin-packing problem</p>
 				
 				<h1>How much does it cost?</h1>
 				<p>It's free and open source. The code and implementation details are on <a href="https://github.com/Jack000/SVGnest" target="_blank">Github</a></p>
+				
+				<h1>Does it use inches? mm?</h1>
+				<p>SVG has its internal units, the distance related fields in the settings use SVG units, ie. pixels. The conversion between a pixel and real units depend on the exporting software, but it's typically 72 pixels = 1 inch</p>
 				
 				<h1>My SVG text/image doesn't show up?</h1>
 				<p>Nesting only works for closed shapes, so SVG elements that don't represent closed shapes are removed. Convert text and any other elements to outlines first. Ensure that outlines do not intersect or overlap eachother. Outlines that are inside other outlines are considered holes.</p>
@@ -470,11 +473,14 @@
 				
 				<h1>Some parts seem to slightly overlap?</h1>
 				<p>Curved shapes are approximated with line segments. For a more accurate nest with curved parts, decrease the curve tolerance parameter in the configuration.</p>
+				
+				<h1>I need help?</h1>
+				<p>Add an issue on Github or contact me personally: <a href="http://jack.works">jack.works</a>
 			</div>
 		</div>
 		
 		<div id="svgnest">
-			<a href="."><img src="img/logo.svg" alt="SVGnest" class="logo" /></a>
+					
 			<div id="controls">
 				<ul class="nav">
 				<li class="button start disabled" id="start"><span id="startlabel">Start Nest</span></li>
