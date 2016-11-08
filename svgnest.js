@@ -233,27 +233,6 @@
 			}, 100);
 		}
 		
-		this.rotatePolygon = function(polygon, angle){
-			var rotated = [];
-			angle = angle * Math.PI / 180;
-			for(var i=0; i<polygon.length; i++){
-				var x = polygon[i].x;
-				var y = polygon[i].y;
-				var x1 = x*Math.cos(angle)-y*Math.sin(angle);
-				var y1 = x*Math.sin(angle)+y*Math.cos(angle);
-								
-				rotated.push({x:x1, y:y1});
-			}
-			// reset bounding box
-			var bounds = GeometryUtil.getPolygonBounds(rotated);
-			rotated.x = bounds.x;
-			rotated.y = bounds.y;
-			rotated.width = bounds.width;
-			rotated.height = bounds.height;
-			
-			return rotated;
-		};
-		
 		this.launchWorkers = function(tree, binPolygon, config, progressCallback, displayCallback){
 			function shuffle(array) {
 			  var currentIndex = array.length, temporaryValue, randomIndex ;
@@ -285,7 +264,7 @@
 					return Math.abs(GeometryUtil.polygonArea(b)) - Math.abs(GeometryUtil.polygonArea(a));
 				});
 				
-				GA = new GeneticAlgorithm(adam, config);
+				GA = new GeneticAlgorithm(adam, binPolygon, config);
 			}
 			
 			var individual = null;
@@ -771,15 +750,15 @@
 		};
 	}
 	
-	function GeneticAlgorithm(adam, config){
+	function GeneticAlgorithm(adam, bin, config){
 	
 		this.config = config || { populationSize: 10, mutationRate: 10, rotations: 4 };
+		this.binBounds = GeometryUtil.getPolygonBounds(bin);
 		
 		// population is an array of individuals. Each individual is a object representing the order of insertion and the angle each part is rotated
 		var angles = [];
 		for(var i=0; i<adam.length; i++){
-			var angle = Math.floor(Math.random()*this.config.rotations)*(360/this.config.rotations);
-			angles.push(angle);
+			angles.push(this.randomAngle(adam[i]));
 		}
 		
 		this.population = [{placement: adam, rotation: angles}];
@@ -788,6 +767,38 @@
 			var mutant = this.mutate(this.population[0]);
 			this.population.push(mutant);
 		}
+	}
+	
+	// returns a random angle of insertion
+	GeneticAlgorithm.prototype.randomAngle = function(part){
+		
+		var angleList = [];
+		for(var i=0; i<Math.max(this.config.rotations,1); i++){
+			angleList.push(i*(360/this.config.rotations));
+		}
+		
+		function shuffleArray(array) {
+			for (var i = array.length - 1; i > 0; i--) {
+				var j = Math.floor(Math.random() * (i + 1));
+				var temp = array[i];
+				array[i] = array[j];
+				array[j] = temp;
+			}
+			return array;
+		}
+		
+		angleList = shuffleArray(angleList);
+
+		for(i=0; i<angleList.length; i++){
+			var rotatedPart = GeometryUtil.rotatePolygon(part, angleList[i]);
+			
+			// don't use obviously bad angles where the part doesn't fit in the bin
+			if(rotatedPart.width < this.binBounds.width && rotatedPart.height < this.binBounds.height){
+				return angleList[i];
+			}
+		}
+		
+		return 0;
 	}
 	
 	// returns a mutated individual with the given mutation rate
@@ -808,8 +819,7 @@
 			
 			rand = Math.random();
 			if(rand < 0.01*this.config.mutationRate){
-				var angle = Math.floor(Math.random()*this.config.rotations)*(360/this.config.rotations);
-				clone.rotation[i] = angle;
+				clone.rotation[i] = this.randomAngle(clone.placement[i]);
 			}
 		}
 		
