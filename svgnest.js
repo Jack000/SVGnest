@@ -828,7 +828,7 @@
 	
 	// single point crossover
 	GeneticAlgorithm.prototype.mate = function(male, female){
-		var cutpoint = Math.round(Math.min(Math.max(Math.random(), 0.1), 0.9)*(male.length-1));
+		var cutpoint = Math.round(Math.min(Math.max(Math.random(), 0.1), 0.9)*(male.placement.length-1));
 		
 		var gene1 = male.placement.slice(0,cutpoint);
 		var rot1 = male.rotation.slice(0,cutpoint);
