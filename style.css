@@ -616,7 +616,7 @@ font-weight: bold;
 }
 
 @media only screen and (max-width: 1500px) {
-   body { font-size: 18px; }
+   body { font-size: 16px; }
 	#svgnest, #messagewrapper{
 	width: 50em;
 	}
@@ -634,8 +634,8 @@ font-weight: bold;
 	}
 	
 	#splash .logo{
-		width: 70%;
-		margin: 0 15%;
+		width: 60%;
+		margin: 0 20%;
 	}
 	
 	h1.label{
@@ -645,4 +645,8 @@ font-weight: bold;
 	.progress{
 	width: 75%;
 	}
+}
+
+@media only screen and (max-width: 1300px) {
+	body { font-size: 14px; }
 }
