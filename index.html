@@ -249,7 +249,15 @@
 					svg.appendChild(group);
 				}
 				
-				var blob = new Blob([svg.outerHTML], {type: "image/svg+xml;charset=utf-8"});
+				var output;
+				if(typeof XMLSerializer != 'undefined'){
+					output = (new XMLSerializer()).serializeToString(svg);
+				}
+				else{
+					output = svg.outerHTML;
+				}
+				
+				var blob = new Blob([output], {type: "image/svg+xml;charset=utf-8"});
 				saveAs(blob, "SVGnest-output.svg");
 			}
 			
