@@ -41,7 +41,7 @@ color: #8498d1;
 
 #splash{
 width: 28em;
-margin: 10% auto 0 auto;
+margin: 8% auto 0 auto;
 }
 
 #splash .logo{
@@ -649,4 +649,43 @@ font-weight: bold;
 
 @media only screen and (max-width: 1300px) {
 	body { font-size: 14px; }
+}
+
+@media only screen and (max-width: 790px) {
+	#splash{
+	text-align: left;
+	}
+	
+	#splash .logo{
+	width: 40%;
+	margin-left: 30%;
+	float: left;
+	}
+	
+	#splash h1.title{
+		margin: 0;
+		font-size: 2em;
+	}
+	
+	#splash .subscript{
+		font-size: 1em;
+	}
+	
+	body { font-size: 21px; }
+	
+	#splash .nav{
+	width: 60%;
+	margin-left: 20%;
+	margin-top: 2em;
+	}
+	
+	#splash .nav li{
+	float: none;
+	display: block;
+	margin-top: 1em;
+	}
+	
+	#faq{
+		padding: 3em;
+	}
 }
