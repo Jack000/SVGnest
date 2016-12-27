@@ -334,6 +334,7 @@
 			p.require('matrix.js');
 			p.require('geometryutil.js');
 			p.require('placementworker.js');
+			p.require('clipper.js');
 			
 			var self = this;
 			var spawncount = 0;
@@ -378,8 +379,12 @@
 					}
 				}
 				else{
-					nfp = GeometryUtil.noFitPolygon(A,B,false,searchEdges);
-					
+					if(searchEdges){
+						nfp = GeometryUtil.noFitPolygon(A,B,false,searchEdges);
+					}
+					else{
+						nfp = minkowskiDifference(A,B);
+					}
 					// sanity check
 					if(!nfp || nfp.length == 0){
 						log('NFP Error: ', pair.key);
@@ -450,6 +455,60 @@
 					if(typeof console !== "undefined") {
 						console.log.apply(console,arguments);
 					}
+				}
+				
+				function toClipperCoordinates(polygon){
+					var clone = [];
+					for(var i=0; i<polygon.length; i++){
+						clone.push({
+							X: polygon[i].x,
+							Y: polygon[i].y
+						});
+					}
+	
+					return clone;
+				};
+				
+				function toNestCoordinates(polygon, scale){
+					var clone = [];
+					for(var i=0; i<polygon.length; i++){
+						clone.push({
+							x: polygon[i].X/scale,
+							y: polygon[i].Y/scale
+						});
+					}
+	
+					return clone;
+				};
+				
+				function minkowskiDifference(A, B){
+					var Ac = toClipperCoordinates(A);
+					ClipperLib.JS.ScaleUpPath(Ac, 10000000);
+					var Bc = toClipperCoordinates(B);
+					ClipperLib.JS.ScaleUpPath(Bc, 10000000);
+					for(var i=0; i<Bc.length; i++){
+						Bc[i].X *= -1;
+						Bc[i].Y *= -1;
+					}
+					var solution = ClipperLib.Clipper.MinkowskiSum(Ac, Bc, true);
+					var clipperNfp;
+		
+					var largestArea = null;
+					for(i=0; i<solution.length; i++){
+						var n = toNestCoordinates(solution[i], 10000000);
+						var sarea = GeometryUtil.polygonArea(n);
+						if(largestArea === null || largestArea > sarea){
+							clipperNfp = n;
+							largestArea = sarea;
+						}
+					}
+		
+					for(var i=0; i<clipperNfp.length; i++){
+						clipperNfp[i].x += B[0].x;
+						clipperNfp[i].y += B[0].y;
+					}
+		
+					return [clipperNfp];
 				}
 				
 				return {key: pair.key, value: nfp};
