@@ -653,7 +653,7 @@ font-weight: bold;
 
 @media only screen and (max-width: 790px) {
 	#splash{
-	text-align: left;
+	width: 100%;
 	}
 	
 	#splash .logo{
@@ -671,7 +671,7 @@ font-weight: bold;
 		font-size: 1em;
 	}
 	
-	body { font-size: 21px; }
+	body { font-size: 18px; }
 	
 	#splash .nav{
 	width: 60%;
