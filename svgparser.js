@@ -393,7 +393,7 @@
 		var p;
 		
 		var lastM = 0;
-		for(var i=0; i<seglist.numberOfItems; i++){
+		for(var i=seglist.numberOfItems-1; i>=0; i--){
 			if(i > 0 && seglist.getItem(i).pathSegTypeAsLetter == 'M' || seglist.getItem(i).pathSegTypeAsLetter == 'm'){
 				lastM = i;
 				break;
