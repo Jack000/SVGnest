@@ -403,20 +403,34 @@ margin-top: 2em;
 #select, #bins{
 float: left;
 width: 69%;
+position: relative;
 }
 
 #select svg, #bins svg{
 width: 100%;
 height: auto;
+position: absolute;
+top: 0;
 margin: 0;
 display: block;
 overflow: visible;
+pointer-events: none;
 }
 
 #select svg *{
 fill: #fff !important;
 fill-opacity: 0 !important;
 stroke: #3bb34a !important;
+stroke-width: 2px !important;
+vector-effect: non-scaling-stroke !important;
+stroke-linejoin: round !important;
+pointer-events: fill;
+}
+
+#select svg *.fullRect{
+fill: #eee !important;
+fill-opacity: 1 !important;
+stroke: #eee !important;
 stroke-width: 2px !important;
 vector-effect: non-scaling-stroke !important;
 stroke-linejoin: round !important;
