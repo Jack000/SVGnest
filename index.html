@@ -57,6 +57,9 @@
 				if(splash){
 					splash.remove();
 				}
+				document.removeEventListener('dragover', FileDragHover, false);
+				document.removeEventListener('dragleave', FileDragHover, false);
+				document.removeEventListener('drop', FileDrop, false);
 				svgnest.setAttribute('style','display: block');
 			}
 			
@@ -81,7 +84,6 @@
 				message.className = 'active animated bounce';
 				
 				attachSvgListeners(svg);
-				hideSplash();
 			};
 			
 			var message = document.getElementById('message');
@@ -123,6 +125,7 @@
 			
 			var zoomin = document.getElementById('zoominbutton');
 			var zoomout = document.getElementById('zoomoutbutton');
+			var exit = document.getElementById('exitbutton');
 			
 			var isworking = false;
 			
@@ -216,17 +219,18 @@
 			}
 			document.addEventListener('dragover', FileDragHover, false);
 			document.addEventListener('dragleave', FileDragHover, false);
+			document.addEventListener('drop', FileDrop, false);
 			function FileDragHover(e){
 				e.stopPropagation();
 				e.preventDefault();
 				upload.style.backgroundColor = (e.type == "dragover" ? "#d7e9b7" : "");
 			}
-			document.addEventListener('drop', function(e){
+			function FileDrop(e){
 				e.stopPropagation(); // Make sure not to replace website by file
 				e.preventDefault();
-				console.log("File dropped");
 				handleFile(e.dataTransfer.files[0]);
-			}, false);
+			}
+			
 			
 			download.onclick = function(){
 				if(download.className == 'button download disabled'){
@@ -300,6 +304,10 @@
 				if(svg){
 					svg.setAttribute('style', 'transform-origin: top left; transform:scale('+zoomlevel+'); -webkit-transform:scale('+zoomlevel+'); -moz-transform:scale('+zoomlevel+'); -ms-transform:scale('+zoomlevel+'); -o-transform:scale('+zoomlevel+');');
 				}
+			}
+			
+			exit.onclick = function(){
+				location.reload();
 			}
 			
 			fileinput.onchange = function(e){
@@ -514,6 +522,7 @@
 				<li class="button config" id="configbutton"></li>
 				<li class="button zoomin" id="zoominbutton"></li>
 				<li class="button zoomout" id="zoomoutbutton"></li>
+				<li class="button exit" id="exitbutton"></li>
 				</ul>
 				
 				<div id="config">
