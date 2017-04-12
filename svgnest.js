@@ -12,6 +12,10 @@
 		var self = this;
 		
 		var svg = null;
+		
+		// keep a reference to any style nodes, to maintain color/fill info
+		this.style = null;
+		
 		var parts = null;
 		
 		var tree = null;
@@ -49,6 +53,9 @@
 			
 			// parse svg
 			svg = SvgParser.load(svgstring);
+			
+			this.style = SvgParser.getStyle();
+
 			svg = SvgParser.clean();
 			
 			tree = this.getParts(svg.children);
@@ -771,8 +778,9 @@
 						for(k=0; k<flattened.length; k++){
 							
 							var c = clone[flattened[k].source];
-							if(flattened[k].hole){
-								c.setAttribute('class','hole');
+							// add class to indicate hole
+							if(flattened[k].hole && (!c.getAttribute('class') || c.getAttribute('class').indexOf('hole') < 0)){
+								c.setAttribute('class',c.getAttribute('class')+' hole');
 							}
 							partgroup.appendChild(c);
 						}

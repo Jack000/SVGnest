@@ -62,6 +62,21 @@
 
 	}
 	
+	// return style node, if any
+	SvgParser.prototype.getStyle = function(){
+		if(!this.svgRoot){
+			return false;
+		}
+		for(var i=0; i<this.svgRoot.children.length; i++){
+			var el = this.svgRoot.children[i];
+			if(el.tagName == 'style'){
+				return el;
+			}
+		}
+		
+		return false;
+	}
+	
 	// set the given path as absolute coords (capital commands)
 	// from http://stackoverflow.com/a/9677915/433888
 	SvgParser.prototype.pathToAbsolute = function(path){
@@ -680,6 +695,7 @@
 	root.SvgParser = {
 		config: parser.config.bind(parser),
 		load: parser.load.bind(parser),
+		getStyle: parser.getStyle.bind(parser),
 		clean: parser.cleanInput.bind(parser),
 		polygonify: parser.polygonify.bind(parser)
 	};

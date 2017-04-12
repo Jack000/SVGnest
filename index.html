@@ -237,6 +237,11 @@
 				
 				svg = svg.cloneNode(false);
 				
+				// maintain stroke, fill etc of input
+				if(SvgNest.style){
+					svg.appendChild(SvgNest.style);
+				}
+				
 				var binHeight = parseInt(bins.children[0].getAttribute('height'));
 				
 				for(i=0; i<bins.children.length; i++){
