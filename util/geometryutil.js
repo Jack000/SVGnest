@@ -1326,10 +1326,8 @@
 				}
 				
 				for(var i=0; i<nfp.length; i++){
-					for(var j=0; j<nfp[i].length; j++){
-						if(_almostEqual(p.x, nfp[i][j].x) && _almostEqual(p.y, nfp[i][j].y)){
-							return true;
-						}
+					if(_almostEqual(p.x, nfp[i].x) && _almostEqual(p.y, nfp[i].y)){
+						return true;
 					}
 				}
 				
