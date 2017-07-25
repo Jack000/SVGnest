@@ -244,7 +244,7 @@
 				
 				var binHeight = parseInt(bins.children[0].getAttribute('height'));
 				
-				for(i=0; i<bins.children.length; i++){
+				for(var i=0; i<bins.children.length; i++){
 					var b = bins.children[i];
 					var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
 					group.setAttribute('transform', 'translate(0 '+binHeight*1.1*i+')');
