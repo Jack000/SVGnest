@@ -58,7 +58,7 @@
 
 			svg = SvgParser.clean();
 			
-			tree = this.getParts(svg.children);
+			tree = this.getParts(svg.childNodes);
 
 			//re-order elements such that deeper elements are on top, so they can be moused over
 			function zorder(paths){
@@ -133,7 +133,7 @@
 				return false;
 			}
 			
-			parts = Array.prototype.slice.call(svg.children);
+			parts = Array.prototype.slice.call(svg.childNodes);
 			var binindex = parts.indexOf(bin);
 			
 			if(binindex >= 0){
@@ -155,8 +155,8 @@
 						Array.prototype.splice.apply(t[i], [0, t[i].length].concat(offsetpaths[0]));
 					}
 					
-					if(t[i].children && t[i].children.length > 0){
-						offsetTree(t[i].children, -offset, offsetFunction);
+					if(t[i].childNodes && t[i].childNodes.length > 0){
+						offsetTree(t[i].childNodes, -offset, offsetFunction);
 					}
 				}
 			}
@@ -433,16 +433,16 @@
 					}
 					
 					// generate nfps for children (holes of parts) if any exist
-					if(useHoles && A.children && A.children.length > 0){
+					if(useHoles && A.childNodes && A.childNodes.length > 0){
 						var Bbounds = GeometryUtil.getPolygonBounds(B);
 						
-						for(var i=0; i<A.children.length; i++){
-							var Abounds = GeometryUtil.getPolygonBounds(A.children[i]);
+						for(var i=0; i<A.childNodes.length; i++){
+							var Abounds = GeometryUtil.getPolygonBounds(A.childNodes[i]);
 
 							// no need to find nfp if B's bounding box is too big
 							if(Abounds.width > Bbounds.width && Abounds.height > Bbounds.height){
 							
-								var cnfp = GeometryUtil.noFitPolygon(A.children[i],B,true,searchEdges);
+								var cnfp = GeometryUtil.noFitPolygon(A.childNodes[i],B,true,searchEdges);
 								// ensure all interior NFPs have the same winding direction
 								if(cnfp && cnfp.length > 0){
 									for(var j=0; j<cnfp.length; j++){
