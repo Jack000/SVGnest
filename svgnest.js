@@ -5,7 +5,7 @@
  
 (function(root){
 	'use strict';
-	
+
 	root.SvgNest = new SvgNest();
 	
 	function SvgNest(){
@@ -985,4 +985,4 @@
 		return pop[0];
 	}
 	
-})(this);
+})(window);
