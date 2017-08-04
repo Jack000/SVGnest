@@ -438,7 +438,7 @@
 			
 			var iterations = 0;
 			
-			function renderSvg(svglist, efficiency, numplaced){
+			function renderSvg(svglist, efficiency, placed, total){
 				iterations++;
 				document.getElementById('info_iterations').innerHTML = iterations;
 				
@@ -458,8 +458,8 @@
 				if(efficiency || efficiency === 0){
 					document.getElementById('info_efficiency').innerHTML = Math.round(efficiency*100);
 				}
-				
-				document.getElementById('info_placed').innerHTML = numplaced;
+
+				document.getElementById('info_placed').innerHTML = placed+'/'+total;
 				
 				document.getElementById('info_placement').setAttribute('style','display: block');
 				display.setAttribute('style','display: none');
