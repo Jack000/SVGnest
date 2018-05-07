@@ -161,6 +161,11 @@ background: #fff url(img/zoomout.svg) no-repeat;
 background-size: 1.5em 1.5em;
 }
 
+.button.exit{
+background: #fff url(img/close.svg) no-repeat;
+background-size: 1.5em 1.5em;
+}
+
 .button:hover{
 color: #55c960;
 box-shadow: 0 2px 1px #d7dae1;
@@ -313,7 +318,7 @@ height: 2.5em;
 background-position: 50%;
 }
 
-#zoominbutton, #zoomoutbutton{
+#zoominbutton, #zoomoutbutton, #exitbutton{
 width: 3em;
 padding: 0;
 height: 2.5em;
@@ -398,20 +403,34 @@ margin-top: 2em;
 #select, #bins{
 float: left;
 width: 69%;
+position: relative;
 }
 
 #select svg, #bins svg{
 width: 100%;
 height: auto;
+position: absolute;
+top: 0;
 margin: 0;
 display: block;
 overflow: visible;
+pointer-events: none;
 }
 
 #select svg *{
 fill: #fff !important;
 fill-opacity: 0 !important;
 stroke: #3bb34a !important;
+stroke-width: 2px !important;
+vector-effect: non-scaling-stroke !important;
+stroke-linejoin: round !important;
+pointer-events: fill;
+}
+
+#select svg *.fullRect{
+fill: #eee !important;
+fill-opacity: 1 !important;
+stroke: #eee !important;
 stroke-width: 2px !important;
 vector-effect: non-scaling-stroke !important;
 stroke-linejoin: round !important;

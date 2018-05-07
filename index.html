@@ -81,7 +81,6 @@
 				message.className = 'active animated bounce';
 				
 				attachSvgListeners(svg);
-				hideSplash();
 			};
 			
 			var message = document.getElementById('message');
@@ -123,6 +122,7 @@
 			
 			var zoomin = document.getElementById('zoominbutton');
 			var zoomout = document.getElementById('zoomoutbutton');
+			var exit = document.getElementById('exitbutton');
 			
 			var isworking = false;
 			
@@ -143,6 +143,11 @@
 			};
 			
 			function startnest(){
+				// Once started, don't allow this anymore
+				document.removeEventListener('dragover', FileDragHover, false);
+				document.removeEventListener('dragleave', FileDragHover, false);
+				document.removeEventListener('drop', FileDrop, false);
+				
 				SvgNest.start(progress, renderSvg);
 				startlabel.innerHTML = 'Stop Nest';
 				start.className = 'button spinner';
@@ -214,6 +219,20 @@
 			upload.onclick = function(){
 				fileinput.click();
 			}
+			document.addEventListener('dragover', FileDragHover, false);
+			document.addEventListener('dragleave', FileDragHover, false);
+			document.addEventListener('drop', FileDrop, false);
+			function FileDragHover(e){
+				e.stopPropagation();
+				e.preventDefault();
+				upload.style.backgroundColor = (e.type == "dragover" ? "#d7e9b7" : "");
+			}
+			function FileDrop(e){
+				e.stopPropagation(); // Make sure not to replace website by file
+				e.preventDefault();
+				handleFile(e.dataTransfer.files[0]);
+			}
+			
 			
 			download.onclick = function(){
 				if(download.className == 'button download disabled'){
@@ -244,7 +263,7 @@
 				
 				var binHeight = parseInt(bins.children[0].getAttribute('height'));
 				
-				for(i=0; i<bins.children.length; i++){
+				for(var i=0; i<bins.children.length; i++){
 					var b = bins.children[i];
 					var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
 					group.setAttribute('transform', 'translate(0 '+binHeight*1.1*i+')');
@@ -294,8 +313,16 @@
 				}
 			}
 			
-			fileinput.onchange = function(e){			
-				var file = e.target.files[0];
+			exit.onclick = function(){
+				location.reload();
+			}
+			
+			fileinput.onchange = function(e){
+				handleFile(e.target.files[0]);
+			}
+			
+			
+			function handleFile(file){
 				if(!file){
 					return;
 				}
@@ -314,7 +341,22 @@
 					if(reader.result){
 						try{
 							var svg = window.SvgNest.parsesvg(reader.result);
+							{
+								var wholeSVG = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+								// Copy relevant scaling info
+								wholeSVG.setAttribute('width',svg.getAttribute('width'));
+								wholeSVG.setAttribute('height',svg.getAttribute('height'));
+								wholeSVG.setAttribute('viewBox',svg.getAttribute('viewBox'));
+								var rect = document.createElementNS(wholeSVG.namespaceURI,'rect');
+								rect.setAttribute('x', wholeSVG.viewBox.baseVal.x);
+								rect.setAttribute('y', wholeSVG.viewBox.baseVal.x);
+								rect.setAttribute('width', wholeSVG.viewBox.baseVal.width);
+								rect.setAttribute('height', wholeSVG.viewBox.baseVal.height);
+								rect.setAttribute('class', 'fullRect');
+								wholeSVG.appendChild(rect);
+							}
 							display.innerHTML = '';
+							display.appendChild(wholeSVG); // As a default bin in background
 							display.appendChild(svg);
 						}
 						catch(e){
@@ -329,6 +371,7 @@
 						start.className = 'button start disabled';
 						
 						attachSvgListeners(svg);
+						attachSvgListeners(wholeSVG);
 					}
 				}
 				
@@ -346,11 +389,15 @@
 							}
 							var currentbin = document.querySelector('#select .active');
 							if(currentbin){
-								currentbin.removeAttribute('class');
+								var className = currentbin.getAttribute('class').replace('active', '').trim();
+								if(!className)
+									currentbin.removeAttribute('class');
+								else
+									currentbin.setAttribute('class', className);
 							}
 							
 							window.SvgNest.setbin(this);
-							this.setAttribute('class','active');
+							this.setAttribute('class',(this.getAttribute('class') ? this.getAttribute('class')+' ' : '') + 'active');
 							
 							start.className = 'button start animated bounce';
 							message.className = '';
@@ -502,6 +549,7 @@
 				<li class="button config" id="configbutton"></li>
 				<li class="button zoomin" id="zoominbutton"></li>
 				<li class="button zoomout" id="zoomoutbutton"></li>
+				<li class="button exit" id="exitbutton"></li>
 				</ul>
 				
 				<div id="config">
