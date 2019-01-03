@@ -14,7 +14,7 @@
 		// the top level SVG element of the SVG document
 		this.svgRoot;
 		
-		this.allowedElements = ['svg','circle','ellipse','path','polygon','polyline','rect'];
+		this.allowedElements = ['svg','circle','ellipse','path','polygon','polyline','rect', 'line'];
 				
 		this.conf = {
 			tolerance: 2, // max bound for bezier->line segment conversion, in native SVG units
