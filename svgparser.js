@@ -373,7 +373,7 @@
 
 						transformedPath += commandStringTransformed;
 					}
-
+					
 					element.setAttribute('d', transformedPath);
 					element.removeAttribute('transform');
 				break;
@@ -429,8 +429,8 @@
 				case 'polygon':
 				case 'polyline':
 					let transformedPoly = ''
-					for(var i=0; i<element.points.length; i++){
-						var point = element.points[i];
+					for(var i=0; i<element.points.numberOfItems; i++){
+						var point = element.points.getItem(i);
 						var transformed = transform.calc(point.x, point.y);
 						const pointPairString = `${transformed[0]},${transformed[1]} `;
 						transformedPoly += pointPairString;
@@ -486,16 +486,22 @@
 		if(!path || path.tagName != 'path' || !path.parentElement){
 			return false;
 		}
-				
-		var seglist = path.pathSegList;
+		
+		var seglist = [];
+		
+		// make copy of seglist (appending to new path removes it from the original pathseglist)
+		for(var i=0; i<path.pathSegList.numberOfItems; i++){
+		    seglist.push(path.pathSegList.getItem(i));
+		}
+
 		var x=0, y=0, x0=0, y0=0;
 		var paths = [];
 		
 		var p;
 		
 		var lastM = 0;
-		for(var i=seglist.numberOfItems-1; i>=0; i--){
-			if(i > 0 && seglist.getItem(i).pathSegTypeAsLetter == 'M' || seglist.getItem(i).pathSegTypeAsLetter == 'm'){
+		for(var i=seglist.length-1; i>=0; i--){
+			if(i > 0 && seglist[i].pathSegTypeAsLetter == 'M' || seglist[i].pathSegTypeAsLetter == 'm'){
 				lastM = i;
 				break;
 			}
@@ -505,10 +511,10 @@
 			return false; // only 1 M command, no need to split
 		}
 		
-		for( i=0; i<seglist.numberOfItems; i++){
-			var s = seglist.getItem(i);
+		for( i=0; i<seglist.length; i++){
+			var s = seglist[i];
 			var command = s.pathSegTypeAsLetter;
-			
+
 			if(command == 'M' || command == 'm'){
 				p = path.cloneNode();
 				p.setAttribute('d','');
@@ -518,7 +524,7 @@
 			if (/[MLHVCSQTA]/.test(command)){
 			  if ('x' in s) x=s.x;
 			  if ('y' in s) y=s.y;
-			  
+
 			  p.pathSegList.appendItem(s);
 			}
 			else{
@@ -551,7 +557,7 @@
 		}
 		
 		path.remove();
-		
+
 		return addedPaths;
 	}
 	
