@@ -35,9 +35,19 @@
 		var parser = new DOMParser();
 		var svg = parser.parseFromString(svgString, "image/svg+xml");
 		
+		this.svgRoot = false;
+		
 		if(svg){
 			this.svg = svg;
-			this.svgRoot = svg.childNodes[0];
+			
+			for(var i=0; i<svg.childNodes.length; i++){
+				// svg document may start with comments or text nodes
+				var child = svg.childNodes[i];
+				if(child.tagName && child.tagName == 'svg'){
+					this.svgRoot = child;
+					break;
+				}
+			}
 		} else {
 			throw new Error("Failed to parse SVG string");
 		}
@@ -213,6 +223,7 @@
 	SvgParser.prototype.applyTransform = function(element, globalTransform){
 		
 		globalTransform = globalTransform || '';
+
 		var transformString = element.getAttribute('transform') || '';
 		transformString = globalTransform + transformString;
 		
@@ -232,11 +243,14 @@
 		var rotate = Math.atan2(tarray[1], tarray[3])*180/Math.PI;
 		var scale = Math.sqrt(tarray[0]*tarray[0]+tarray[2]*tarray[2]);
 
-		if(element.tagName == 'g' || element.tagName == 'svg' || element.tagName == 'defs' || element.tagName == 'clipPath' ||){
+		if(element.tagName == 'g' || element.tagName == 'svg' || element.tagName == 'defs' || element.tagName == 'clipPath'){
 			element.removeAttribute('transform');
 			var children = Array.prototype.slice.call(element.childNodes);
+
 			for(var i=0; i<children.length; i++){
-				this.applyTransform(children[i], transformString);
+				if(children[i].tagName){ // skip text nodes
+					this.applyTransform(children[i], transformString);
+				}
 			}
 		}
 		else if(transform && !transform.isIdentity()){
@@ -437,6 +451,7 @@
 	
 	// bring all child elements to the top level
 	SvgParser.prototype.flatten = function(element){
+		
 		for(var i=0; i<element.childNodes.length; i++){
 			this.flatten(element.childNodes[i]);
 		}
