@@ -1,12 +1,12 @@
-﻿(function () {
+﻿(function (root) {
 	var isCommonJS = typeof module !== 'undefined' && module.exports;
-	var isNode = !(typeof window !== 'undefined' && this === window);
+	var isNode = !(typeof window !== 'undefined' && root === window);
 	var setImmediate = setImmediate || function (cb) {
 		setTimeout(cb, 0);
 	};
-	var Worker = isNode ? require(__dirname + '/Worker.js') : self.Worker;
-	var URL = typeof self !== 'undefined' ? (self.URL ? self.URL : self.webkitURL) : null;
-	var _supports = (isNode || self.Worker) ? true : false; // node always supports parallel
+	var Worker = isNode ? require(__dirname + '/Worker.js') : root.Worker;
+	var URL = typeof root !== 'undefined' ? (root.URL ? root.URL : root.webkitURL) : null;
+	var _supports = (isNode || root.Worker) ? true : false; // node always supports parallel
 
 	function extend(from, to) {
 		if (!to) to = {};
@@ -382,9 +382,5 @@
 		return this;
 	};
 
-	if (isCommonJS) {
-		module.exports = Parallel;
-	} else {
-		self.Parallel = Parallel;
-	}
-})();
+	root.Parallel = Parallel;
+})(typeof window !== 'undefined' ? window : self);

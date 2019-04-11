@@ -14,7 +14,7 @@
 		// the top level SVG element of the SVG document
 		this.svgRoot;
 		
-		this.allowedElements = ['svg','circle','ellipse','path','polygon','polyline','rect'];
+		this.allowedElements = ['svg','circle','ellipse','path','polygon','polyline','rect', 'line'];
 				
 		this.conf = {
 			tolerance: 2, // max bound for bezier->line segment conversion, in native SVG units
@@ -37,9 +37,14 @@
 		
 		if(svg){
 			this.svg = svg;
-			this.svgRoot = svg.firstElementChild;
+			this.svgRoot = svg.childNodes[0];
+		} else {
+			throw new Error("Failed to parse SVG string");
 		}
-		
+
+		if(!this.svgRoot){
+			throw new Error("SVG has no children");
+		}
 		return this.svgRoot;
 	}
 	
@@ -60,6 +65,21 @@
 		
 		return this.svgRoot;
 
+	}
+	
+	// return style node, if any
+	SvgParser.prototype.getStyle = function(){
+		if(!this.svgRoot){
+			return false;
+		}
+		for(var i=0; i<this.svgRoot.childNodes.length; i++){
+			var el = this.svgRoot.childNodes[i];
+			if(el.tagName == 'style'){
+				return el;
+			}
+		}
+		
+		return false;
 	}
 	
 	// set the given path as absolute coords (capital commands)
@@ -197,11 +217,11 @@
 		transformString = globalTransform + transformString;
 		
 		var transform, scale, rotate;
-		
+
 		if(transformString && transformString.length > 0){
 			var transform = this.transformParse(transformString);
 		}
-		
+
 		if(!transform){
 			transform = new Matrix();
 		}
@@ -211,15 +231,18 @@
 		// decompose affine matrix to rotate, scale components (translate is just the 3rd column)
 		var rotate = Math.atan2(tarray[1], tarray[3])*180/Math.PI;
 		var scale = Math.sqrt(tarray[0]*tarray[0]+tarray[2]*tarray[2]);
-		
-		if(element.tagName == 'g' || element.tagName == 'svg'){
+
+		if(element.tagName == 'g' || element.tagName == 'svg' || element.tagName == 'defs' || element.tagName == 'clipPath' ||){
 			element.removeAttribute('transform');
-			var children = Array.prototype.slice.call(element.children);
+			var children = Array.prototype.slice.call(element.childNodes);
 			for(var i=0; i<children.length; i++){
 				this.applyTransform(children[i], transformString);
 			}
 		}
 		else if(transform && !transform.isIdentity()){
+			const id = element.getAttribute('id')
+			const className = element.getAttribute('class')
+
 			switch(element.tagName){
 				case 'ellipse':
 					// the goal is to remove the transform property, but an ellipse without a transform will have no rotation
@@ -248,14 +271,17 @@
 					var seglist = element.pathSegList;
 					var prevx = 0;
 					var prevy = 0;
-					
+
+					let transformedPath = '';
+		
 					for(var i=0; i<seglist.numberOfItems; i++){
 						var s = seglist.getItem(i);
 						var command = s.pathSegTypeAsLetter;
 						
+
 						if(command == 'H'){
 							seglist.replaceItem(element.createSVGPathSegLinetoAbs(s.x,prevy),i);
-							s = seglist.getItem(i);
+							s = seglist.getItem(i);	
 						}
 						else if(command == 'V'){
 							seglist.replaceItem(element.createSVGPathSegLinetoAbs(prevx,s.y),i);
@@ -267,27 +293,74 @@
 							seglist.replaceItem(element.createSVGPathSegArcAbs(s.x,s.y,s.r1*scale,s.r2*scale,s.angle+rotate,s.largeArcFlag,s.sweepFlag),i);
 							s = seglist.getItem(i);
 						}
+
+						const transPoints = {};
 						
 						if('x' in s && 'y' in s){
 							var transformed = transform.calc(s.x, s.y);
 							prevx = s.x;
 							prevy = s.y;
-							
-							s.x = transformed[0];
-							s.y = transformed[1];
+							transPoints.x = transformed[0];
+							transPoints.y = transformed[1];
 						}
 						if('x1' in s && 'y1' in s){
 							var transformed = transform.calc(s.x1, s.y1);
-							s.x1 = transformed[0];
-							s.y1 = transformed[1];
+							transPoints.x1 = transformed[0];
+							transPoints.y1 = transformed[1];
 						}
 						if('x2' in s && 'y2' in s){
 							var transformed = transform.calc(s.x2, s.y2);
-							s.x2 = transformed[0];
-							s.y2 = transformed[1];
+							transPoints.x2 = transformed[0];
+							transPoints.y2 = transformed[1];
 						}
+
+						let commandStringTransformed = ``;
+
+						//MLHVCSQTA
+						//H and V are transformed to "L" commands above so we don't need to handle them. All lowercase (relative) are already handled too (converted to absolute)
+						switch(command) {
+							case 'M':
+								commandStringTransformed += `${command} ${transPoints.x} ${transPoints.y}`;
+								break;
+							case 'L':
+								commandStringTransformed += `${command} ${transPoints.x} ${transPoints.y}`;
+								break;
+							case 'C': 
+								commandStringTransformed += `${command} ${transPoints.x1} ${transPoints.y1}  ${transPoints.x2} ${transPoints.y2} ${transPoints.x} ${transPoints.y}`;
+								break;
+							case 'S': 
+								commandStringTransformed += `${command} ${transPoints.x2} ${transPoints.y2} ${transPoints.x} ${transPoints.y}`;
+								break;
+							case 'Q':
+								commandStringTransformed += `${command} ${transPoints.x1} ${transPoints.y1} ${transPoints.x} ${transPoints.y}`;
+								break;
+							case 'T': 
+								commandStringTransformed += `${command} ${transPoints.x} ${transPoints.y}`;
+								break;
+							case 'A':
+								const largeArcFlag = s.largeArcFlag ? 1 : 0;
+								const sweepFlag = s.sweepFlag ? 1 : 0;
+								commandStringTransformed += `${command} ${s.r1} ${s.r2} ${s.angle} ${largeArcFlag} ${sweepFlag} ${transPoints.x} ${transPoints.y}`
+								break;
+							case 'H':
+								commandStringTransformed += `L ${transPoints.x} ${transPoints.y}`
+								break;
+							case 'V':
+								commandStringTransformed += `L ${transPoints.x} ${transPoints.y}`
+								break;
+							case 'Z': 
+							case 'z':
+								commandStringTransformed += command;
+								break;
+							default: 
+								console.log('FOUND COMMAND NOT HANDLED BY COMMAND STRING BUILDER', command);
+								break;
+						}
+
+						transformedPath += commandStringTransformed;
 					}
-					
+
+					element.setAttribute('d', transformedPath);
 					element.removeAttribute('transform');
 				break;
 				case 'circle':
@@ -298,11 +371,17 @@
 					// skew not supported
 					element.setAttribute('r', element.getAttribute('r')*scale);
 				break;
-
+				case 'line':
+					const transformedStartPt = transform.calc(element.getAttribute('x1'), element.getAttribute('y1'));
+					const transformedEndPt = transform.calc(element.getAttribute('x2'), element.getAttribute('y2'));
+					element.setAttribute('x1', transformedStartPt[0].toString());
+					element.setAttribute('y1', transformedStartPt[1].toString());
+					element.setAttribute('x2', transformedEndPt[0].toString());
+					element.setAttribute('y2', transformedEndPt[1].toString());
+				break;
 				case 'rect':
 					// similar to the ellipse, we'll replace rect with polygon
 					var polygon = this.svg.createElementNS(element.namespaceURI, 'polygon');
-					
 															
 					var p1 = this.svgRoot.createSVGPoint();
 					var p2 = this.svgRoot.createSVGPoint();
@@ -333,31 +412,38 @@
 					
 					element.parentElement.replaceChild(polygon, element);
 					element = polygon;
-					
 				case 'polygon':
 				case 'polyline':
+					let transformedPoly = ''
 					for(var i=0; i<element.points.length; i++){
 						var point = element.points[i];
 						var transformed = transform.calc(point.x, point.y);
-						point.x = transformed[0];
-						point.y = transformed[1];
+						const pointPairString = `${transformed[0]},${transformed[1]} `;
+						transformedPoly += pointPairString;
 					}
 					
+					element.setAttribute('points', transformedPoly);
 					element.removeAttribute('transform');
 				break;
+			}
+			if(id) {
+				element.setAttribute('id', id);
+			}
+			if(className){
+				element.setAttribute('class', className);
 			}
 		}
 	}
 	
 	// bring all child elements to the top level
 	SvgParser.prototype.flatten = function(element){
-		for(var i=0; i<element.children.length; i++){
-			this.flatten(element.children[i]);
+		for(var i=0; i<element.childNodes.length; i++){
+			this.flatten(element.childNodes[i]);
 		}
 		
 		if(element.tagName != 'svg'){
-			while(element.children.length > 0){
-				element.parentElement.appendChild(element.children[0]);
+			while(element.childNodes.length > 0){
+				element.parentElement.appendChild(element.childNodes[0]);
 			}
 		}
 	}
@@ -371,11 +457,11 @@
 		
 		element = element || this.svgRoot;
 		
-		for(var i=0; i<element.children.length; i++){
-			this.filter(whitelist, element.children[i]);
+		for(var i=0; i<element.childNodes.length; i++){
+			this.filter(whitelist, element.childNodes[i]);
 		}
 		
-		if(element.children.length == 0 && whitelist.indexOf(element.tagName) < 0){
+		if(element.childNodes.length == 0 && whitelist.indexOf(element.tagName) < 0){
 			element.parentElement.removeChild(element);
 		}
 	}
@@ -457,7 +543,7 @@
 	// recursively run the given function on the given element
 	SvgParser.prototype.recurse = function(element, func){
 		// only operate on original DOM tree, ignore any children that are added. Avoid infinite loops
-		var children = Array.prototype.slice.call(element.children);
+		var children = Array.prototype.slice.call(element.childNodes);
 		for(var i=0; i<children.length; i++){
 			this.recurse(children[i], func);
 		}
@@ -678,8 +764,9 @@
 	root.SvgParser = {
 		config: parser.config.bind(parser),
 		load: parser.load.bind(parser),
+		getStyle: parser.getStyle.bind(parser),
 		clean: parser.cleanInput.bind(parser),
 		polygonify: parser.polygonify.bind(parser)
 	};
 	
-}(this));
+}(window));

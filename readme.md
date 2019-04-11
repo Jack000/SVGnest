@@ -19,7 +19,7 @@ Given a square piece of material and some letters to be laser-cut:
 
 We want to pack all the letters into the square, using as little material as possible. If a single square is not enough, we also want to minimize the number of squares used.
 
-In the CNC world this is called "nesting", and [software](http://www.mynesting.com/) that [does this](http://www.autodesk.com/products/trunest/overview) is typically targeted at [industrial customers](http://www.hypertherm.com/en/Products/Automated_cutting/Nesting_software/) and [very expensive](http://www.nestfab.com/pricing/).
+In the CNC world this is called "[nesting](http://sigmanest.com/)", and [software](http://www.mynesting.com/) that [does this](http://www.autodesk.com/products/trunest/overview) is typically targeted at [industrial customers](http://www.hypertherm.com/en/Products/Automated_cutting/Nesting_software/) and [very expensive](http://www.nestfab.com/pricing/).
 
 SVGnest is a free and open-source alternative that solves this problem with the orbital approach outlined in [E.K. Burke *et al.* 2006], using a genetic algorithm for global optimization. It works for arbitrary containers and concave edge cases, and performs on-par with existing commercial software.
 
