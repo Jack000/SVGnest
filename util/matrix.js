@@ -8,6 +8,7 @@ function Matrix() {
   this.queue = [];   // list of matrixes to apply
   this.cache = null; // combined matrix cache
 }
+(typeof window !== 'undefined' ? window : self).Matrix = Matrix;
 
 // combine 2 matrixes
 // m1, m2 - [a, b, c, d, e, g]

@@ -766,4 +766,4 @@
 		polygonify: parser.polygonify.bind(parser)
 	};
 	
-}(this));
+}(window));
