@@ -559,11 +559,9 @@
 		switch(element.tagName){
 			case 'polygon':
 			case 'polyline':
-				for (var i=0; i<element.points.numberOfItems; i++) {
-					poly.push({
-						x: element.points.getItem(i).x,
-						y: element.points.getItem(i).y,
-					});
+				for(i=0; i<element.points.numberOfItems; i++){
+					var point = element.points.getItem(i);
+					poly.push({ x: point.x, y: point.y });
 				}
 			break;
 			case 'rect':
