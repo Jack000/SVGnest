@@ -26,7 +26,7 @@ function toNestCoordinates(polygon, scale){
 
 function rotatePolygon(polygon, degrees){
 	var rotated = [];
-	angle = degrees * Math.PI / 180;
+	var angle = degrees * Math.PI / 180;
 	for(var i=0; i<polygon.length; i++){
 		var x = polygon[i].x;
 		var y = polygon[i].y;
@@ -69,7 +69,7 @@ function PlacementWorker(binPolygon, paths, ids, rotations, config, nfpCache){
 		// rotate paths by given rotation
 		var rotated = [];
 		for(i=0; i<paths.length; i++){
-			r = rotatePolygon(paths[i], paths[i].rotation);
+			var r = rotatePolygon(paths[i], paths[i].rotation);
 			r.rotation = paths[i].rotation;
 			r.source = paths[i].source;
 			r.id = paths[i].id;
