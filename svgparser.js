@@ -37,9 +37,14 @@
 		
 		if(svg){
 			this.svg = svg;
-			this.svgRoot = svg.firstElementChild;
+			this.svgRoot = svg.childNodes[0];
+		} else {
+			throw new Error("Failed to parse SVG string");
 		}
-		
+
+		if(!this.svgRoot){
+			throw new Error("SVG has no children");
+		}
 		return this.svgRoot;
 	}
 	
@@ -67,8 +72,8 @@
 		if(!this.svgRoot){
 			return false;
 		}
-		for(var i=0; i<this.svgRoot.children.length; i++){
-			var el = this.svgRoot.children[i];
+		for(var i=0; i<this.svgRoot.childNodes.length; i++){
+			var el = this.svgRoot.childNodes[i];
 			if(el.tagName == 'style'){
 				return el;
 			}
@@ -229,7 +234,7 @@
 
 		if(element.tagName == 'g' || element.tagName == 'svg' || element.tagName == 'defs' || element.tagName == 'clipPath' ||){
 			element.removeAttribute('transform');
-			var children = Array.prototype.slice.call(element.children);
+			var children = Array.prototype.slice.call(element.childNodes);
 			for(var i=0; i<children.length; i++){
 				this.applyTransform(children[i], transformString);
 			}
@@ -432,13 +437,13 @@
 	
 	// bring all child elements to the top level
 	SvgParser.prototype.flatten = function(element){
-		for(var i=0; i<element.children.length; i++){
-			this.flatten(element.children[i]);
+		for(var i=0; i<element.childNodes.length; i++){
+			this.flatten(element.childNodes[i]);
 		}
 		
 		if(element.tagName != 'svg'){
-			while(element.children.length > 0){
-				element.parentElement.appendChild(element.children[0]);
+			while(element.childNodes.length > 0){
+				element.parentElement.appendChild(element.childNodes[0]);
 			}
 		}
 	}
@@ -452,11 +457,11 @@
 		
 		element = element || this.svgRoot;
 		
-		for(var i=0; i<element.children.length; i++){
-			this.filter(whitelist, element.children[i]);
+		for(var i=0; i<element.childNodes.length; i++){
+			this.filter(whitelist, element.childNodes[i]);
 		}
 		
-		if(element.children.length == 0 && whitelist.indexOf(element.tagName) < 0){
+		if(element.childNodes.length == 0 && whitelist.indexOf(element.tagName) < 0){
 			element.parentElement.removeChild(element);
 		}
 	}
@@ -538,7 +543,7 @@
 	// recursively run the given function on the given element
 	SvgParser.prototype.recurse = function(element, func){
 		// only operate on original DOM tree, ignore any children that are added. Avoid infinite loops
-		var children = Array.prototype.slice.call(element.children);
+		var children = Array.prototype.slice.call(element.childNodes);
 		for(var i=0; i<children.length; i++){
 			this.recurse(children[i], func);
 		}
@@ -554,10 +559,10 @@
 		switch(element.tagName){
 			case 'polygon':
 			case 'polyline':
-				for(i=0; i<element.points.length; i++){
+				for (var i=0; i<element.points.numberOfItems; i++) {
 					poly.push({
-						x: element.points[i].x,
-						y: element.points[i].y
+						x: element.points.getItem(i).x,
+						y: element.points.getItem(i).y,
 					});
 				}
 			break;
