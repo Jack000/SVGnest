@@ -971,15 +971,15 @@
 		
 		var lower = 0;
 		var weight = 1/pop.length;
-		var upper = weight;
+		var upper = weight * 2;
 		
 		for(var i=0; i<pop.length; i++){
 			// if the random number falls between lower and upper bounds, select this individual
-			if(rand > lower && rand < upper){
+			if(rand >= lower && rand < upper){
 				return pop[i];
 			}
 			lower = upper;
-			upper += 2*weight * ((pop.length-i)/pop.length);
+			upper += 2*weight * ((pop.length-i-1)/pop.length);
 		}
 		
 		return pop[0];
