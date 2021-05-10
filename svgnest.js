@@ -881,6 +881,10 @@
 					var temp = clone.placement[i];
 					clone.placement[i] = clone.placement[j];
 					clone.placement[j] = temp;
+					
+					var tempRotation = clone.rotation[i]; 
+					clone.rotation[i] = clone.rotation[j]; 
+					clone.rotation[j] = tempRotation ;
 				}
 			}
 			
