@@ -296,6 +296,7 @@ left: 24.5em;
 background-color: #fff;
 border-radius: 0.5em;
 transition: max-height  0.5s;
+z-index: 1;
 }
 
 #configwrapper{
