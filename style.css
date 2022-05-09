@@ -307,6 +307,7 @@ padding: 3em 0 1em 2em;
 display: block;
 max-height: 50em;
 box-shadow: 0 2px 1px #d7dae1;
+z-index: 1;
 }
 
 #configbutton{
