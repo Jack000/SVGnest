@@ -1,44 +1,60 @@
 // matrix utility from SvgPath
 // https://github.com/fontello/svgpath
 
-'use strict';
+"use strict";
 
 function Matrix() {
-  if (!(this instanceof Matrix)) { return new Matrix(); }
-  this.queue = [];   // list of matrixes to apply
+  if (!(this instanceof Matrix)) {
+    return new Matrix();
+  }
+  this.queue = []; // list of matrixes to apply
   this.cache = null; // combined matrix cache
 }
-(typeof window !== 'undefined' ? window : self).Matrix = Matrix;
+(typeof window !== "undefined" ? window : self).Matrix = Matrix;
 
 // combine 2 matrixes
 // m1, m2 - [a, b, c, d, e, g]
 //
-Matrix.prototype.combine = function(m1, m2) {
+Matrix.prototype.combine = function (m1, m2) {
   return [
     m1[0] * m2[0] + m1[2] * m2[1],
     m1[1] * m2[0] + m1[3] * m2[1],
     m1[0] * m2[2] + m1[2] * m2[3],
     m1[1] * m2[2] + m1[3] * m2[3],
     m1[0] * m2[4] + m1[2] * m2[5] + m1[4],
-    m1[1] * m2[4] + m1[3] * m2[5] + m1[5]
+    m1[1] * m2[4] + m1[3] * m2[5] + m1[5],
   ];
-}
+};
 
-Matrix.prototype.isIdentity = function(){
-	if (!this.cache) {
-		this.cache = this.toArray();
-	  }
+Matrix.prototype.isIdentity = function () {
+  if (!this.cache) {
+    this.cache = this.toArray();
+  }
 
-	  var m = this.cache;
-	  
-	  if (m[0] === 1 && m[1] === 0 && m[2] === 0 && m[3] === 1 && m[4] === 0 && m[5] === 0) {
-		return true;
-	  }
-	  return false;
-}
+  var m = this.cache;
+
+  if (
+    m[0] === 1 &&
+    m[1] === 0 &&
+    m[2] === 0 &&
+    m[3] === 1 &&
+    m[4] === 0 &&
+    m[5] === 0
+  ) {
+    return true;
+  }
+  return false;
+};
 
 Matrix.prototype.matrix = function (m) {
-  if (m[0] === 1 && m[1] === 0 && m[2] === 0 && m[3] === 1 && m[4] === 0 && m[5] === 0) {
+  if (
+    m[0] === 1 &&
+    m[1] === 0 &&
+    m[2] === 0 &&
+    m[3] === 1 &&
+    m[4] === 0 &&
+    m[5] === 0
+  ) {
     return this;
   }
   this.cache = null;
@@ -46,24 +62,21 @@ Matrix.prototype.matrix = function (m) {
   return this;
 };
 
-
 Matrix.prototype.translate = function (tx, ty) {
   if (tx !== 0 || ty !== 0) {
     this.cache = null;
-    this.queue.push([ 1, 0, 0, 1, tx, ty ]);
+    this.queue.push([1, 0, 0, 1, tx, ty]);
   }
   return this;
 };
-
 
 Matrix.prototype.scale = function (sx, sy) {
   if (sx !== 1 || sy !== 1) {
     this.cache = null;
-    this.queue.push([ sx, 0, 0, sy, 0, 0 ]);
+    this.queue.push([sx, 0, 0, sy, 0, 0]);
   }
   return this;
 };
-
 
 Matrix.prototype.rotate = function (angle, rx, ry) {
   var rad, cos, sin;
@@ -71,11 +84,11 @@ Matrix.prototype.rotate = function (angle, rx, ry) {
   if (angle !== 0) {
     this.translate(rx, ry);
 
-    rad = angle * Math.PI / 180;
+    rad = (angle * Math.PI) / 180;
     cos = Math.cos(rad);
     sin = Math.sin(rad);
 
-    this.queue.push([ cos, sin, -sin, cos, 0, 0 ]);
+    this.queue.push([cos, sin, -sin, cos, 0, 0]);
     this.cache = null;
 
     this.translate(-rx, -ry);
@@ -83,24 +96,21 @@ Matrix.prototype.rotate = function (angle, rx, ry) {
   return this;
 };
 
-
 Matrix.prototype.skewX = function (angle) {
   if (angle !== 0) {
     this.cache = null;
-    this.queue.push([ 1, 0, Math.tan(angle * Math.PI / 180), 1, 0, 0 ]);
+    this.queue.push([1, 0, Math.tan((angle * Math.PI) / 180), 1, 0, 0]);
   }
   return this;
 };
-
 
 Matrix.prototype.skewY = function (angle) {
   if (angle !== 0) {
     this.cache = null;
-    this.queue.push([ 1, Math.tan(angle * Math.PI / 180), 0, 1, 0, 0 ]);
+    this.queue.push([1, Math.tan((angle * Math.PI) / 180), 0, 1, 0, 0]);
   }
   return this;
 };
-
 
 // Flatten queue
 //
@@ -110,7 +120,7 @@ Matrix.prototype.toArray = function () {
   }
 
   if (!this.queue.length) {
-    this.cache = [ 1, 0, 0, 1, 0, 0 ];
+    this.cache = [1, 0, 0, 1, 0, 0];
     return this.cache;
   }
 
@@ -127,7 +137,6 @@ Matrix.prototype.toArray = function () {
   return this.cache;
 };
 
-
 // Apply list of matrixes to (x,y) point.
 // If `isRelative` set, `translate` component of matrix will be skipped
 //
@@ -135,7 +144,9 @@ Matrix.prototype.calc = function (x, y, isRelative) {
   var m, i, len;
 
   // Don't change point on empty transforms queue
-  if (!this.queue.length) { return [ x, y ]; }
+  if (!this.queue.length) {
+    return [x, y];
+  }
 
   // Calculate final matrix, if not exists
   //
@@ -151,6 +162,6 @@ Matrix.prototype.calc = function (x, y, isRelative) {
   // Apply matrix to point
   return [
     x * m[0] + y * m[2] + (isRelative ? 0 : m[4]),
-    x * m[1] + y * m[3] + (isRelative ? 0 : m[5])
+    x * m[1] + y * m[3] + (isRelative ? 0 : m[5]),
   ];
 };
