@@ -677,9 +677,7 @@ class SvgNest {
 
         // can't use .spawn because our data is an array
         const p2 = new Parallel([placeList.slice(0)], {
-          env: {
-            self: worker,
-          },
+          env: { self: worker },
           evalPath: "src/util/eval.js",
         });
 
