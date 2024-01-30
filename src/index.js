@@ -1,10 +1,28 @@
 // UI-specific stuff, button clicks go here
+const svgNest = new SvgNest();
+
 function ready(fn) {
   if (document.readyState != "loading") {
     fn();
   } else {
     document.addEventListener("DOMContentLoaded", fn);
   }
+}
+
+function saveBlobAs(blob, file_name) {
+  if (typeof navigator.msSaveBlob == "function")
+    return navigator.msSaveBlob(blob, file_name);
+
+  var saver = document.createElementNS("http://www.w3.org/1999/xhtml", "a");
+  var blobURL = (saver.href = URL.createObjectURL(blob)),
+    body = document.body;
+
+  saver.download = file_name;
+
+  body.appendChild(saver);
+  saver.dispatchEvent(new MouseEvent("click"));
+  body.removeChild(saver);
+  URL.revokeObjectURL(blobURL);
 }
 
 ready(function () {
@@ -37,7 +55,7 @@ ready(function () {
 
   demo.onclick = function () {
     try {
-      var svg = window.SvgNest.parsesvg(display.innerHTML);
+      var svg = svgNest.parsesvg(display.innerHTML);
       display.innerHTML = "";
       display.appendChild(svg);
     } catch (e) {
@@ -64,7 +82,7 @@ ready(function () {
     return;
   }
 
-  if (!window.SvgNest) {
+  if (!svgNest) {
     message.innerHTML = "Couldn't initialize SVGnest";
     message.className = "error animated bounce";
     return;
@@ -120,7 +138,7 @@ ready(function () {
     document.removeEventListener("dragleave", FileDragHover, false);
     document.removeEventListener("drop", FileDrop, false);
 
-    SvgNest.start(progress, renderSvg);
+    svgNest.start(progress, renderSvg);
     startlabel.innerHTML = "Stop Nest";
     start.className = "button spinner";
     configbutton.className = "button config disabled";
@@ -137,7 +155,7 @@ ready(function () {
   }
 
   function stopnest() {
-    SvgNest.stop();
+    svgNest.stop();
     startlabel.innerHTML = "Start Nest";
     start.className = "button start";
     configbutton.className = "button config";
@@ -175,7 +193,7 @@ ready(function () {
       }
     }
 
-    window.SvgNest.config(c);
+    svgNest.config(c);
 
     // new configs will invalidate current nest
     if (isworking) {
@@ -226,8 +244,8 @@ ready(function () {
     svg = svg.cloneNode(false);
 
     // maintain stroke, fill etc of input
-    if (SvgNest.style) {
-      svg.appendChild(SvgNest.style);
+    if (svgNest.style) {
+      svg.appendChild(svgNest.style);
     }
 
     var binHeight = parseInt(bins.children[0].getAttribute("height"));
@@ -254,7 +272,7 @@ ready(function () {
     }
 
     var blob = new Blob([output], { type: "image/svg+xml;charset=utf-8" });
-    saveAs(blob, "SVGnest-output.svg");
+    saveBlobAs(blob, "SVGnest-output.svg");
   };
 
   var zoomlevel = 1.0;
@@ -341,7 +359,7 @@ ready(function () {
 
       if (reader.result) {
         try {
-          var svg = window.SvgNest.parsesvg(reader.result);
+          var svg = svgNest.parsesvg(reader.result);
           {
             var wholeSVG = document.createElementNS(
               "http://www.w3.org/2000/svg",
@@ -400,7 +418,7 @@ ready(function () {
             else currentbin.setAttribute("class", className);
           }
 
-          window.SvgNest.setbin(this);
+          svgNest.setbin(this);
           this.setAttribute(
             "class",
             (this.getAttribute("class")
