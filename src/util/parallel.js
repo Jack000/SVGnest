@@ -1,14 +1,4 @@
-﻿function extend(from, to = {}) {
-  for (let key in from) {
-    if (to[key] === undefined) {
-      to[key] = from[key];
-    }
-  }
-
-  return to;
-}
-
-class Operation {
+﻿class Operation {
   constructor(result = null) {
     this._successCallbacks = [];
     this._errorCallbacks = [];
@@ -57,123 +47,35 @@ class Operation {
   }
 }
 
-var defaults = {
-  evalPath: null,
-  maxWorkers: navigator.hardwareConcurrency || 4,
-  synchronous: true,
-  env: {},
-  envNamespace: "env",
-};
-
 class Parallel {
-  constructor(data, options) {
+  constructor(id, data, env, onSpawn) {
     this.data = data;
-    this.options = extend(defaults, options);
-    this.operation = new Operation(this.data);
-    this.requiredScripts = [];
-    this.requiredFunctions = [];
+    this._maxWorkers = navigator.hardwareConcurrency || 4;
+    this._options = { id, env };
+    this._operation = new Operation(this.data);
+    this._onSpawn = onSpawn;
   }
 
-  getWorkerSource(cb, env) {
-    const importCount = this.requiredFunctions.length;
-    let preStr = "";
-    let i = 0;
-    if (this.requiredScripts.length !== 0) {
-      preStr +=
-        'importScripts("' + this.requiredScripts.join('","') + '");\r\n';
-    }
-    let requiredFunction;
-
-    for (i = 0; i < importCount; ++i) {
-      requiredFunction = this.requiredFunctions[i];
-
-      if (requiredFunction.name) {
-        preStr +=
-          "var " +
-          requiredFunction.name +
-          " = " +
-          requiredFunction.fn.toString() +
-          ";";
-      } else {
-        preStr += requiredFunction.fn.toString();
-      }
-    }
-
-    env = JSON.stringify(env || {});
-
-    var ns = this.options.envNamespace;
-
-    return (
-      preStr +
-      "self.onmessage = function(e) {var global = {}; global." +
-      ns +
-      " = " +
-      env +
-      ";self.postMessage((" +
-      cb.toString() +
-      ")(e.data))}"
-    );
-  }
-
-  require() {
-    var args = Array.prototype.slice.call(arguments, 0),
-      func;
-
-    for (var i = 0; i < args.length; i++) {
-      func = args[i];
-
-      if (typeof func === "string") {
-        this.requiredScripts.push(func);
-      } else if (typeof func === "function") {
-        this.requiredFunctions.push({ fn: func });
-      } else if (typeof func === "object") {
-        this.requiredFunctions.push(func);
-      }
-    }
-
-    return this;
-  }
-
-  _spawnWorker(cb, env) {
-    var worker;
-    var src = this.getWorkerSource(cb, env);
+  _spawnWorker() {
+    let worker;
 
     try {
-      if (this.requiredScripts.length !== 0) {
-        if (this.options.evalPath !== null) {
-          worker = new Worker(this.options.evalPath);
-          worker.postMessage(src);
-        } else {
-          throw new Error("Can't use required scripts without eval.js!");
-        }
-      } else {
-        var blob = new Blob([src], { type: "text/javascript" });
-        var url = URL.createObjectURL(blob);
-
-        worker = new Worker(url);
-      }
+      worker = new Worker("src/util/shared-worker.js");
+      worker.postMessage(this._options);
     } catch (e) {
-      if (this.options.evalPath !== null) {
-        // blob/url unsupported, cross-origin error
-        worker = new Worker(this.options.evalPath);
-        worker.postMessage(src);
-      } else {
-        throw e;
-      }
+      throw e;
     }
 
     return worker;
   }
 
-  spawn = function (cb, env) {
+  spawn() {
     const operation = new Operation();
 
-    env = extend(this.options.env, env);
+    this._operation.then(() => {
+      const worker = this._spawnWorker();
 
-    this.operation.then(() => {
-      const worker = this._spawnWorker(cb, env);
-
-      if (worker !== undefined) {
+      if (worker) {
         worker.onmessage = (message) => {
           worker.terminate();
           this.data = message.data;
@@ -184,15 +86,6 @@ class Parallel {
           operation.reject(error);
         };
         worker.postMessage(this.data);
-      } else if (this.options.synchronous) {
-        Parallel.setImmediate(() => {
-          try {
-            this.data = cb(this.data);
-            operation.resolve(this.data);
-          } catch (error) {
-            operation.reject(error);
-          }
-        });
       } else {
         throw new Error(
           "Workers do not exist and synchronous operation not allowed!"
@@ -200,15 +93,19 @@ class Parallel {
       }
     });
 
-    this.operation = operation;
+    this._operation = operation;
 
     return this;
-  };
+  }
 
-  _spawnMapWorker(i, cb, done, env, worker) {
-    if (!worker) worker = this._spawnWorker(cb, env);
+  _spawnMapWorker(i, done, worker) {
+    this._onSpawn && this._onSpawn();
 
-    if (worker !== undefined) {
+    if (!worker) {
+      worker = this._spawnWorker();
+    }
+
+    if (worker) {
       worker.onmessage = (message) => {
         this.data[i] = message.data;
         done(null, worker);
@@ -218,11 +115,6 @@ class Parallel {
         done(e);
       };
       worker.postMessage(this.data[i]);
-    } else if (this.options.synchronous) {
-      Parallel.setImmediate(() => {
-        this.data[i] = cb(this.data[i]);
-        done();
-      });
     } else {
       throw new Error(
         "Workers do not exist and synchronous operation not allowed!"
@@ -230,15 +122,13 @@ class Parallel {
     }
   }
 
-  map(cb, env) {
-    env = extend(this.options.env, env || {});
-
+  map() {
     if (!this.data.length) {
-      return this.spawn(cb, env);
+      return this.spawn();
     }
 
-    var startedOps = 0;
-    var doneOps = 0;
+    let startedOps = 0;
+    let doneOps = 0;
     const operation = new Operation();
 
     const done = (error, worker) => {
@@ -246,123 +136,39 @@ class Parallel {
         operation.reject(error);
       } else if (++doneOps === this.data.length) {
         operation.resolve(this.data);
-        if (worker) worker.terminate();
+        if (worker) {
+          worker.terminate();
+        }
       } else if (startedOps < this.data.length) {
-        this._spawnMapWorker(startedOps++, cb, done, env, worker);
+        this._spawnMapWorker(startedOps++, done, worker);
       } else if (worker) {
         worker.terminate();
       }
     };
 
-    this.operation.then(
+    this._operation.then(
       () => {
         for (
           ;
-          startedOps - doneOps < this.options.maxWorkers &&
+          startedOps - doneOps < this._maxWorkers &&
           startedOps < this.data.length;
           ++startedOps
         ) {
-          this._spawnMapWorker(startedOps, cb, done, env);
+          this._spawnMapWorker(startedOps, done);
         }
       },
       function (error) {
         operation.reject(error);
       }
     );
-    this.operation = operation;
-    return this;
-  }
-
-  _spawnReduceWorker(data, callback, done, env, worker) {
-    if (!worker) worker = this._spawnWorker(callback, env);
-
-    if (worker !== undefined) {
-      worker.onmessage = (message) => {
-        this.data[that.data.length] = message.data;
-        done(null, worker);
-      };
-      worker.onerror = (error) => {
-        worker.terminate();
-        done(error, null);
-      };
-      worker.postMessage(data);
-    } else if (this.options.synchronous) {
-      Parallel.setImmediate(() => {
-        this.data[this.data.length] = callback(data);
-        done();
-      });
-    } else {
-      throw new Error(
-        "Workers do not exist and synchronous operation not allowed!"
-      );
-    }
-  }
-
-  reduce(callback, env) {
-    env = extend(this.options.env, env || {});
-
-    if (!this.data.length) {
-      throw new Error("Can't reduce non-array data");
-    }
-
-    var runningWorkers = 0;
-    var operation = new Operation();
-
-    const done = (error, worker) => {
-      --runningWorkers;
-      if (error) {
-        operation.reject(error);
-      } else if (this.data.length === 1 && runningWorkers === 0) {
-        this.data = this.data[0];
-        operation.resolve(this.data);
-        if (worker) {
-          worker.terminate();
-        }
-      } else if (this.data.length > 1) {
-        ++runningWorkers;
-        this._spawnReduceWorker(
-          [this.data[0], this.data[1]],
-          callback,
-          done,
-          env,
-          worker
-        );
-        this.data.splice(0, 2);
-      } else if (worker) {
-        worker.terminate();
-      }
-    };
-
-    this.operation.then(() => {
-      if (this.data.length === 1) {
-        operation.resolve(this.data[0]);
-      } else {
-        for (
-          let i = 0;
-          i < this.options.maxWorkers && i < Math.floor(this.data.length / 2);
-          ++i
-        ) {
-          ++runningWorkers;
-          this._spawnReduceWorker(
-            [this.data[i * 2], this.data[i * 2 + 1]],
-            callback,
-            done,
-            env
-          );
-        }
-
-        this.data.splice(0, i * 2);
-      }
-    });
-
-    this.operation = operation;
-    return this;
+    this._operation = operation;
   }
 
   then(successCallback, errorCallback = () => {}) {
+    this.map();
     const operation = new Operation();
 
-    this.operation.then(
+    this._operation.then(
       () => {
         let result;
 
@@ -402,7 +208,7 @@ class Parallel {
         }
       }
     );
-    this.operation = operation;
+    this._operation = operation;
     return this;
   }
 

@@ -113,7 +113,7 @@ function toClipperCoordinates(polygon) {
   for (i = 0; i < polygon.length; ++i) {
     result.push({
       X: polygon[i].x,
-      Y: polygon[i].y,
+      Y: polygon[i].y
     });
   }
 
@@ -128,11 +128,29 @@ function toNestCoordinates(polygon, scale) {
   for (i = 0; i < count; ++i) {
     result.push({
       x: polygon[i].X / scale,
-      y: polygon[i].Y / scale,
+      y: polygon[i].Y / scale
     });
   }
 
   return result;
+}
+
+function getPlacementWorkerData(
+  binPolygon,
+  paths,
+  ids,
+  rotations,
+  config,
+  nfpCache = {}
+) {
+  return {
+    binPolygon,
+    paths,
+    ids,
+    rotations,
+    config,
+    nfpCache
+  };
 }
 
 class SvgNest {
@@ -158,7 +176,7 @@ class SvgNest {
       populationSize: 10,
       mutationRate: 10,
       useHoles: false,
-      exploreConcave: false,
+      exploreConcave: false
     };
 
     this.working = false;
@@ -427,7 +445,6 @@ class SvgNest {
     const newCache = {};
     let stringKey = "";
     let key;
-    let placed;
     let part;
 
     const updateCache = (polygon1, polygon2, rotation1, rotation2, inside) => {
@@ -436,7 +453,7 @@ class SvgNest {
         B: polygon2.id,
         inside,
         Arotation: rotation1,
-        Brotation: rotation2,
+        Brotation: rotation2
       };
 
       stringKey = JSON.stringify(key);
@@ -463,7 +480,7 @@ class SvgNest {
     // only keep cache for one cycle
     this.nfpCache = newCache;
 
-    const worker = new PlacementWorker(
+    const placementWorkerData = getPlacementWorkerData(
       binPolygon,
       placeList.slice(0),
       ids,
@@ -472,190 +489,24 @@ class SvgNest {
       this.nfpCache
     );
 
-    var p = new Parallel(nfpPairs, {
-      env: {
-        binPolygon,
-        searchEdges: configuration.exploreConcave,
-        useHoles: configuration.useHoles,
-      },
-      evalPath: "src/util/eval.js",
-    });
+    let spawnCount = 0;
 
-    p.require("matrix.js");
-    p.require("geometryutil.js");
-    p.require("placementworker.js");
-    p.require("clipper.js");
-
-    var spawncount = 0;
-    p._spawnMapWorker = (i, cb, done, env, wrk) => {
-      // hijack the worker call to check progress
-      this.progress = spawncount++ / nfpPairs.length;
-      return Parallel.prototype._spawnMapWorker.call(p, i, cb, done, env, wrk);
+    const onSpawn = () => {
+      this.progress = spawnCount++ / nfpPairs.length;
     };
 
-    p.map(function (pair) {
-      function minkowskiDifference(A, B) {
-        let i = 0;
-        let clipperNfp;
-        let largestArea = null;
-        let n;
-        let sarea;
-        const Ac = toClipperCoordinates(A);
-        const Bc = toClipperCoordinates(B);
+    const parallel = new Parallel(
+      "pair",
+      nfpPairs,
+      {
+        binPolygon,
+        searchEdges: configuration.exploreConcave,
+        useHoles: configuration.useHoles
+      },
+      onSpawn
+    );
 
-        ClipperLib.JS.ScaleUpPath(Ac, 10000000);
-        ClipperLib.JS.ScaleUpPath(Bc, 10000000);
-
-        for (i = 0; i < Bc.length; ++i) {
-          Bc[i].X *= -1;
-          Bc[i].Y *= -1;
-        }
-
-        const solutions = ClipperLib.Clipper.MinkowskiSum(Ac, Bc, true);
-        const solutionCount = solutions.length;
-
-        for (i = 0; i < solutionCount; ++i) {
-          n = toNestCoordinates(solutions[i], 10000000);
-          sarea = GeometryUtil.polygonArea(n);
-
-          if (largestArea === null || largestArea > sarea) {
-            clipperNfp = n;
-            largestArea = sarea;
-          }
-        }
-
-        for (i = 0; i < clipperNfp.length; ++i) {
-          clipperNfp[i].x += B[0].x;
-          clipperNfp[i].y += B[0].y;
-        }
-
-        return [clipperNfp];
-      }
-
-      if (!pair || pair.length == 0) {
-        return null;
-      }
-      var searchEdges = global.env.searchEdges;
-      var useHoles = global.env.useHoles;
-
-      var A = rotatePolygon(pair.A, pair.key.Arotation);
-      var B = rotatePolygon(pair.B, pair.key.Brotation);
-
-      var nfp;
-
-      if (pair.key.inside) {
-        if (GeometryUtil.isRectangle(A, 0.001)) {
-          nfp = GeometryUtil.noFitPolygonRectangle(A, B);
-        } else {
-          nfp = GeometryUtil.noFitPolygon(A, B, true, searchEdges);
-        }
-
-        // ensure all interior NFPs have the same winding direction
-        if (nfp && nfp.length > 0) {
-          for (var i = 0; i < nfp.length; i++) {
-            if (GeometryUtil.polygonArea(nfp[i]) > 0) {
-              nfp[i].reverse();
-            }
-          }
-        } else {
-          // warning on null inner NFP
-          // this is not an error, as the part may simply be larger than the bin or otherwise unplaceable due to geometry
-          log("NFP Warning: ", pair.key);
-        }
-      } else {
-        if (searchEdges) {
-          nfp = GeometryUtil.noFitPolygon(A, B, false, searchEdges);
-        } else {
-          nfp = minkowskiDifference(A, B);
-        }
-        // sanity check
-        if (!nfp || nfp.length == 0) {
-          log("NFP Error: ", pair.key);
-          log("A: ", JSON.stringify(A));
-          log("B: ", JSON.stringify(B));
-          return null;
-        }
-
-        for (var i = 0; i < nfp.length; i++) {
-          if (!searchEdges || i == 0) {
-            // if searchedges is active, only the first NFP is guaranteed to pass sanity check
-            if (
-              Math.abs(GeometryUtil.polygonArea(nfp[i])) <
-              Math.abs(GeometryUtil.polygonArea(A))
-            ) {
-              log(
-                "NFP Area Error: ",
-                Math.abs(GeometryUtil.polygonArea(nfp[i])),
-                pair.key
-              );
-              log("NFP:", JSON.stringify(nfp[i]));
-              log("A: ", JSON.stringify(A));
-              log("B: ", JSON.stringify(B));
-              nfp.splice(i, 1);
-              return null;
-            }
-          }
-        }
-
-        if (nfp.length == 0) {
-          return null;
-        }
-
-        // for outer NFPs, the first is guaranteed to be the largest. Any subsequent NFPs that lie inside the first are holes
-        for (var i = 0; i < nfp.length; i++) {
-          if (GeometryUtil.polygonArea(nfp[i]) > 0) {
-            nfp[i].reverse();
-          }
-
-          if (i > 0) {
-            if (GeometryUtil.pointInPolygon(nfp[i][0], nfp[0])) {
-              if (GeometryUtil.polygonArea(nfp[i]) < 0) {
-                nfp[i].reverse();
-              }
-            }
-          }
-        }
-
-        // generate nfps for children (holes of parts) if any exist
-        if (useHoles && A.childNodes && A.childNodes.length > 0) {
-          var Bbounds = GeometryUtil.getPolygonBounds(B);
-
-          for (var i = 0; i < A.childNodes.length; i++) {
-            var Abounds = GeometryUtil.getPolygonBounds(A.childNodes[i]);
-
-            // no need to find nfp if B's bounding box is too big
-            if (
-              Abounds.width > Bbounds.width &&
-              Abounds.height > Bbounds.height
-            ) {
-              var cnfp = GeometryUtil.noFitPolygon(
-                A.childNodes[i],
-                B,
-                true,
-                searchEdges
-              );
-              // ensure all interior NFPs have the same winding direction
-              if (cnfp && cnfp.length > 0) {
-                for (var j = 0; j < cnfp.length; j++) {
-                  if (GeometryUtil.polygonArea(cnfp[j]) < 0) {
-                    cnfp[j].reverse();
-                  }
-                  nfp.push(cnfp[j]);
-                }
-              }
-            }
-          }
-        }
-      }
-
-      function log() {
-        if (typeof console !== "undefined") {
-          console.log.apply(console, arguments);
-        }
-      }
-
-      return { key: pair.key, value: nfp };
-    }).then(
+    parallel.then(
       (generatedNfp) => {
         if (generatedNfp) {
           let i = 0;
@@ -673,20 +524,16 @@ class SvgNest {
           }
         }
 
-        worker.nfpCache = this.nfpCache;
+        placementWorkerData.nfpCache = this.nfpCache;
 
         // can't use .spawn because our data is an array
-        const p2 = new Parallel([placeList.slice(0)], {
-          env: { self: worker },
-          evalPath: "src/util/eval.js",
-        });
+        const p2 = new Parallel(
+          "placement",
+          [placeList.slice()],
+          placementWorkerData
+        );
 
-        p2.require("clipper.js");
-        p2.require("matrix.js");
-        p2.require("geometryutil.js");
-        p2.require("placementworker.js");
-
-        p2.map(worker.placePaths).then(
+        p2.then(
           (placements) => {
             if (!placements || placements.length == 0) {
               return;
