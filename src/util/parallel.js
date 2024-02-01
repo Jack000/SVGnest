@@ -1,4 +1,6 @@
-﻿class Operation {
+﻿import Worker from "./shared.worker";
+
+class Operation {
   constructor(result = null) {
     this._successCallbacks = [];
     this._errorCallbacks = [];
@@ -47,7 +49,7 @@
   }
 }
 
-class Parallel {
+export default class Parallel {
   constructor(id, data, env, onSpawn) {
     this._data = data;
     this._maxWorkers = navigator.hardwareConcurrency || 4;
@@ -61,7 +63,7 @@ class Parallel {
 
     if (!worker) {
       try {
-        worker = new Worker("src/util/shared-worker.js");
+        worker = new Worker();
         worker.postMessage(this._options);
       } catch (e) {
         throw e;

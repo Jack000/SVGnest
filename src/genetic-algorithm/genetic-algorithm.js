@@ -1,3 +1,6 @@
+import GeometryUtil from "../util/geometryutil";
+import Phenotype from "./phenotype";
+
 function shuffleArray(array) {
   const lastIndex = array.length - 1;
   let i = 0;
@@ -14,12 +17,12 @@ function shuffleArray(array) {
   return array;
 }
 
-class GeneticAlgorithm {
+export default class GeneticAlgorithm {
   constructor(adam, bin, config) {
     this.config = config || {
       populationSize: 10,
       mutationRate: 10,
-      rotations: 4,
+      rotations: 4
     };
     this.binBounds = GeometryUtil.getPolygonBounds(bin);
 

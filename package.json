@@ -1,0 +1,33 @@
+{
+  "name": "svgnest.es6",
+  "version": "1.0.0",
+  "description": "ES6 version of https://github.com/Jack000/SVGnest migrated to webpack",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yuriilychak/SVGnest.git"
+  },
+  "keywords": [
+    "poygon pack",
+    "es6",
+    "algorithm"
+  ],
+  "author": "yurii.lychak",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yuriilychak/SVGnest/issues"
+  },
+  "homepage": "https://github.com/yuriilychak/SVGnest#readme",
+  "devDependencies": {
+    "webpack": "^5.90.0",
+    "webpack-cli": "^5.1.4",
+    "worker-loader": "^3.0.8"
+  },
+  "dependencies": {
+    "js-clipper": "^1.0.1"
+  }
+}

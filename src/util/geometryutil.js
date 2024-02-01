@@ -41,7 +41,7 @@ function _normalizeVector(v) {
 
   return {
     x: v.x * inverse,
-    y: v.y * inverse,
+    y: v.y * inverse
   };
 }
 
@@ -220,24 +220,24 @@ const GeometryUtil = {
     subdivide: function (p1, p2, c1, t) {
       var mid1 = {
         x: p1.x + (c1.x - p1.x) * t,
-        y: p1.y + (c1.y - p1.y) * t,
+        y: p1.y + (c1.y - p1.y) * t
       };
 
       var mid2 = {
         x: c1.x + (p2.x - c1.x) * t,
-        y: c1.y + (p2.y - c1.y) * t,
+        y: c1.y + (p2.y - c1.y) * t
       };
 
       var mid3 = {
         x: mid1.x + (mid2.x - mid1.x) * t,
-        y: mid1.y + (mid2.y - mid1.y) * t,
+        y: mid1.y + (mid2.y - mid1.y) * t
       };
 
       var seg1 = { p1: p1, p2: mid3, c1: mid1 };
       var seg2 = { p1: mid3, p2: p2, c1: mid2 };
 
       return [seg1, seg2];
-    },
+    }
   },
 
   CubicBezier: {
@@ -296,39 +296,39 @@ const GeometryUtil = {
     subdivide: function (p1, p2, c1, c2, t) {
       var mid1 = {
         x: p1.x + (c1.x - p1.x) * t,
-        y: p1.y + (c1.y - p1.y) * t,
+        y: p1.y + (c1.y - p1.y) * t
       };
 
       var mid2 = {
         x: c2.x + (p2.x - c2.x) * t,
-        y: c2.y + (p2.y - c2.y) * t,
+        y: c2.y + (p2.y - c2.y) * t
       };
 
       var mid3 = {
         x: c1.x + (c2.x - c1.x) * t,
-        y: c1.y + (c2.y - c1.y) * t,
+        y: c1.y + (c2.y - c1.y) * t
       };
 
       var mida = {
         x: mid1.x + (mid3.x - mid1.x) * t,
-        y: mid1.y + (mid3.y - mid1.y) * t,
+        y: mid1.y + (mid3.y - mid1.y) * t
       };
 
       var midb = {
         x: mid3.x + (mid2.x - mid3.x) * t,
-        y: mid3.y + (mid2.y - mid3.y) * t,
+        y: mid3.y + (mid2.y - mid3.y) * t
       };
 
       var midx = {
         x: mida.x + (midb.x - mida.x) * t,
-        y: mida.y + (midb.y - mida.y) * t,
+        y: mida.y + (midb.y - mida.y) * t
       };
 
       var seg1 = { p1: p1, p2: midx, c1: mid1, c2: mida };
       var seg2 = { p1: midx, p2: p2, c1: midb, c2: mid2 };
 
       return [seg1, seg2];
-    },
+    }
   },
 
   Arc: {
@@ -362,7 +362,7 @@ const GeometryUtil = {
 
         var mid = {
           x: 0.5 * (fullarc.p1.x + fullarc.p2.x),
-          y: 0.5 * (fullarc.p1.y + fullarc.p2.y),
+          y: 0.5 * (fullarc.p1.y + fullarc.p2.y)
         };
 
         // compare midpoint of line with midpoint of arc
@@ -377,7 +377,7 @@ const GeometryUtil = {
             ry: arc.ry,
             theta: arc.theta,
             extent: 0.5 * arc.extent,
-            angle: arc.angle,
+            angle: arc.angle
           };
           var arc2 = {
             center: arc.center,
@@ -385,7 +385,7 @@ const GeometryUtil = {
             ry: arc.ry,
             theta: arc.theta + 0.5 * arc.extent,
             extent: 0.5 * arc.extent,
-            angle: arc.angle,
+            angle: arc.angle
           };
           todo.splice(0, 1, arc1, arc2);
         }
@@ -427,7 +427,7 @@ const GeometryUtil = {
         ry: ry,
         angle: angle,
         largearc: largearc,
-        sweep: sweep,
+        sweep: sweep
       };
     },
 
@@ -435,12 +435,12 @@ const GeometryUtil = {
     svgToCenter: function (p1, p2, rx, ry, angleDegrees, largearc, sweep) {
       var mid = {
         x: 0.5 * (p1.x + p2.x),
-        y: 0.5 * (p1.y + p2.y),
+        y: 0.5 * (p1.y + p2.y)
       };
 
       var diff = {
         x: 0.5 * (p2.x - p1.x),
-        y: 0.5 * (p2.y - p1.y),
+        y: 0.5 * (p2.y - p1.y)
       };
 
       var angle = _degreesToRadians(angleDegrees % 360);
@@ -511,9 +511,9 @@ const GeometryUtil = {
         ry: ry,
         theta: theta,
         extent: delta,
-        angle: angleDegrees,
+        angle: angleDegrees
       };
-    },
+    }
   },
 
   // returns the rectangular bounding box of the given polygon
@@ -545,7 +545,7 @@ const GeometryUtil = {
       x: xmin,
       y: ymin,
       width: xmax - xmin,
-      height: ymax - ymin,
+      height: ymax - ymin
     };
   },
 
@@ -659,20 +659,20 @@ const GeometryUtil = {
 
         var a0 = {
           x: A[prevaindex].x + Aoffsetx,
-          y: A[prevaindex].y + Aoffsety,
+          y: A[prevaindex].y + Aoffsety
         };
         var b0 = {
           x: B[prevbindex].x + Boffsetx,
-          y: B[prevbindex].y + Boffsety,
+          y: B[prevbindex].y + Boffsety
         };
 
         var a3 = {
           x: A[nextaindex].x + Aoffsetx,
-          y: A[nextaindex].y + Aoffsety,
+          y: A[nextaindex].y + Aoffsety
         };
         var b3 = {
           x: B[nextbindex].x + Boffsetx,
-          y: B[nextbindex].y + Boffsety,
+          y: B[nextbindex].y + Boffsety
         };
 
         if (
@@ -771,7 +771,7 @@ const GeometryUtil = {
 
     var direction = {
       x: -normal.y,
-      y: normal.x,
+      y: normal.x
     };
 
     // find the max and min points, they will be the endpoints of our edge
@@ -832,12 +832,12 @@ const GeometryUtil = {
 
     var leftvector = {
       x: left.x - minvertex.x,
-      y: left.y - minvertex.y,
+      y: left.y - minvertex.y
     };
 
     var rightvector = {
       x: right.x - minvertex.x,
-      y: right.y - minvertex.y,
+      y: right.y - minvertex.y
     };
 
     var dotleft = leftvector.x * direction.x + leftvector.y * direction.y;
@@ -915,7 +915,7 @@ const GeometryUtil = {
 
     var dir = {
       x: normal.y,
-      y: -normal.x,
+      y: -normal.x
     };
 
     var pdot = p.x * dir.x + p.y * dir.y;
@@ -986,7 +986,7 @@ const GeometryUtil = {
 
     var dir = {
       x: normal.y,
-      y: -normal.x,
+      y: -normal.x
     };
 
     var pdot = p.x * dir.x + p.y * dir.y;
@@ -1034,12 +1034,12 @@ const GeometryUtil = {
   segmentDistance: function (A, B, E, F, direction) {
     var normal = {
       x: direction.y,
-      y: -direction.x,
+      y: -direction.x
     };
 
     var reverse = {
       x: -direction.x,
-      y: -direction.y,
+      y: -direction.y
     };
 
     var dotA = A.x * normal.x + A.y * normal.y;
@@ -1227,12 +1227,12 @@ const GeometryUtil = {
 
     var normal = {
       x: dir.y,
-      y: -dir.x,
+      y: -dir.x
     };
 
     var reverse = {
       x: -dir.x,
-      y: -dir.y,
+      y: -dir.y
     };
 
     for (var i = 0; i < edgeB.length - 1; i++) {
@@ -1527,8 +1527,8 @@ const GeometryUtil = {
         { x: minAx - minBx + B[0].x, y: minAy - minBy + B[0].y },
         { x: maxAx - maxBx + B[0].x, y: minAy - minBy + B[0].y },
         { x: maxAx - maxBx + B[0].x, y: maxAy - maxBy + B[0].y },
-        { x: minAx - minBx + B[0].x, y: maxAy - maxBy + B[0].y },
-      ],
+        { x: minAx - minBx + B[0].x, y: maxAy - maxBy + B[0].y }
+      ]
     ];
   },
 
@@ -1571,7 +1571,7 @@ const GeometryUtil = {
       // shift B such that the bottom-most point of B is at the top-most point of A. This guarantees an initial placement with no intersections
       var startpoint = {
         x: A[minAindex].x - B[maxBindex].x,
-        y: A[minAindex].y - B[maxBindex].y,
+        y: A[minAindex].y - B[maxBindex].y
       };
     } else {
       // no reliable heuristic for inside
@@ -1591,8 +1591,8 @@ const GeometryUtil = {
       var NFP = [
         {
           x: B[0].x + B.offsetx,
-          y: B[0].y + B.offsety,
-        },
+          y: B[0].y + B.offsety
+        }
       ];
 
       var referencex = B[0].x + B.offsetx;
@@ -1617,7 +1617,7 @@ const GeometryUtil = {
             } else if (
               _onSegment(A[i], A[nexti], {
                 x: B[j].x + B.offsetx,
-                y: B[j].y + B.offsety,
+                y: B[j].y + B.offsety
               })
             ) {
               touching.push({ type: 1, A: nexti, B: j });
@@ -1666,14 +1666,14 @@ const GeometryUtil = {
               x: prevA.x - vertexA.x,
               y: prevA.y - vertexA.y,
               start: vertexA,
-              end: prevA,
+              end: prevA
             };
 
             var vA2 = {
               x: nextA.x - vertexA.x,
               y: nextA.y - vertexA.y,
               start: vertexA,
-              end: nextA,
+              end: nextA
             };
 
             // B vectors need to be inverted
@@ -1681,14 +1681,14 @@ const GeometryUtil = {
               x: vertexB.x - prevB.x,
               y: vertexB.y - prevB.y,
               start: prevB,
-              end: vertexB,
+              end: vertexB
             };
 
             var vB2 = {
               x: vertexB.x - nextB.x,
               y: vertexB.y - nextB.y,
               start: nextB,
-              end: vertexB,
+              end: vertexB
             };
 
             vectors.push(vA1);
@@ -1700,28 +1700,28 @@ const GeometryUtil = {
               x: vertexA.x - (vertexB.x + B.offsetx),
               y: vertexA.y - (vertexB.y + B.offsety),
               start: prevA,
-              end: vertexA,
+              end: vertexA
             });
 
             vectors.push({
               x: prevA.x - (vertexB.x + B.offsetx),
               y: prevA.y - (vertexB.y + B.offsety),
               start: vertexA,
-              end: prevA,
+              end: prevA
             });
           } else if (touching[i].type == 2) {
             vectors.push({
               x: vertexA.x - (vertexB.x + B.offsetx),
               y: vertexA.y - (vertexB.y + B.offsety),
               start: prevB,
-              end: vertexB,
+              end: vertexB
             });
 
             vectors.push({
               x: vertexA.x - (prevB.x + B.offsetx),
               y: vertexA.y - (prevB.y + B.offsety),
               start: vertexB,
-              end: prevB,
+              end: prevB
             });
           }
         }
@@ -1748,7 +1748,7 @@ const GeometryUtil = {
             );
             var unitv = {
               x: vectors[i].x / vectorlength,
-              y: vectors[i].y / vectorlength,
+              y: vectors[i].y / vectorlength
             };
 
             var prevlength = Math.sqrt(
@@ -1756,7 +1756,7 @@ const GeometryUtil = {
             );
             var prevunit = {
               x: prevvector.x / prevlength,
-              y: prevvector.y / prevlength,
+              y: prevvector.y / prevlength
             };
 
             // we need to scale down to unit vectors to normalize vector length. Could also just do a tan here
@@ -1833,7 +1833,7 @@ const GeometryUtil = {
 
         NFP.push({
           x: referencex,
-          y: referencey,
+          y: referencey
         });
 
         B.offsetx += translate.x;
@@ -2061,5 +2061,7 @@ const GeometryUtil = {
     rotated.height = bounds.height;
 
     return rotated;
-  },
+  }
 };
+
+export default GeometryUtil;

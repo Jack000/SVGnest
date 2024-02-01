@@ -3,7 +3,7 @@
 
 "use strict";
 
-class Matrix {
+export default class Matrix {
   constructor() {
     this.queue = []; // list of matrixes to apply
     this.cache = null; // combined matrix cache
@@ -19,7 +19,7 @@ class Matrix {
       m1[0] * m2[2] + m1[2] * m2[3],
       m1[1] * m2[2] + m1[3] * m2[3],
       m1[0] * m2[4] + m1[2] * m2[5] + m1[4],
-      m1[1] * m2[4] + m1[3] * m2[5] + m1[5],
+      m1[1] * m2[4] + m1[3] * m2[5] + m1[5]
     ];
   }
 
@@ -159,7 +159,7 @@ class Matrix {
     // Apply matrix to point
     return [
       x * m[0] + y * m[2] + (isRelative ? 0 : m[4]),
-      x * m[1] + y * m[3] + (isRelative ? 0 : m[5]),
+      x * m[1] + y * m[3] + (isRelative ? 0 : m[5])
     ];
   }
 }

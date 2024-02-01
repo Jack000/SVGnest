@@ -4,7 +4,10 @@
  * Licensed under the MIT license
  */
 
-class SvgParser {
+import GeometryUtil from "./util/geometryutil";
+import Matrix from "./util/matrix";
+
+export default class SvgParser {
   constructor() {
     // the SVG document
     this.svg;
@@ -20,12 +23,12 @@ class SvgParser {
       "polygon",
       "polyline",
       "rect",
-      "line",
+      "line"
     ];
 
     this.conf = {
       tolerance: 2, // max bound for bezier->line segment conversion, in native SVG units
-      toleranceSvg: 0.005, // fudge factor for browser inaccuracy in SVG unit handling
+      toleranceSvg: 0.005 // fudge factor for browser inaccuracy in SVG unit handling
     };
   }
 
@@ -199,7 +202,7 @@ class SvgParser {
       rotate: true,
       translate: true,
       skewX: true,
-      skewY: true,
+      skewY: true
     };
 
     var CMD_SPLIT_RE =

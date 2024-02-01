@@ -1,4 +1,5 @@
-this.importScripts("matrix.js", "geometryutil.js", "clipper.js");
+import ClipperLib from "js-clipper";
+import GeometryUtil from "./geometryutil";
 
 // clipperjs uses alerts for warnings
 function alert(message) {
@@ -497,7 +498,7 @@ function pairData(pair, env) {
   return { key: pair.key, value: nfp };
 }
 
-this.onmessage = function (code) {
+self.onmessage = function (code) {
   const middleware = code.data.id === "pair" ? pairData : placePaths;
 
   this.onmessage = function (e) {

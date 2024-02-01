@@ -1,4 +1,4 @@
-class Phenotype {
+export default class Phenotype {
   constructor(placement, rotation) {
     this._placemant = placement;
     this._rotation = rotation;

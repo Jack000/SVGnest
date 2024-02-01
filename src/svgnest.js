@@ -3,6 +3,13 @@
  * Licensed under the MIT license
  */
 
+import ClipperLib from "js-clipper";
+
+import GeneticAlgorithm from "./genetic-algorithm/genetic-algorithm";
+import SvgParser from "./svgparser";
+import Parallel from "./util/parallel";
+import GeometryUtil from "./util/geometryutil";
+
 function flattenTree(tree, hole, result = []) {
   const nodeCount = tree.length;
   let i = 0;
@@ -153,7 +160,7 @@ function getPlacementWorkerData(
   };
 }
 
-class SvgNest {
+export default class SvgNest {
   constructor() {
     this.svg = null;
 
@@ -181,7 +188,7 @@ class SvgNest {
 
     this.working = false;
 
-    this.genethicAlgorythm = null;
+    this.genethicAlgorithm = null;
     this.best = null;
     this.workerTimer = null;
     this.progress = 0;
@@ -265,7 +272,7 @@ class SvgNest {
     this.best = null;
     this.nfpCache = {};
     this.binPolygon = null;
-    this.genethicAlgorythm = null;
+    this.genethicAlgorithm = null;
 
     return this.configuration;
   }
@@ -403,7 +410,7 @@ class SvgNest {
   ) {
     let i, j;
 
-    if (this.genethicAlgorythm === null) {
+    if (this.genethicAlgorithm === null) {
       // initiate new GA
       const adam = tree.slice(0);
 
@@ -414,7 +421,7 @@ class SvgNest {
           Math.abs(GeometryUtil.polygonArea(a))
       );
 
-      this.genethicAlgorythm = new GeneticAlgorithm(
+      this.genethicAlgorithm = new GeneticAlgorithm(
         adam,
         binPolygon,
         configuration
@@ -424,17 +431,17 @@ class SvgNest {
     let individual = null;
 
     // evaluate all members of the population
-    for (i = 0; i < this.genethicAlgorythm.population.length; ++i) {
-      if (!this.genethicAlgorythm.population[i].fitness) {
-        individual = this.genethicAlgorythm.population[i];
+    for (i = 0; i < this.genethicAlgorithm.population.length; ++i) {
+      if (!this.genethicAlgorithm.population[i].fitness) {
+        individual = this.genethicAlgorithm.population[i];
         break;
       }
     }
 
     if (individual === null) {
       // all individuals have been evaluated, start next generation
-      this.genethicAlgorythm.generation();
-      individual = this.genethicAlgorythm.population[1];
+      this.genethicAlgorithm.generation();
+      individual = this.genethicAlgorithm.population[1];
     }
 
     const placeList = individual.placement;

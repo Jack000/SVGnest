@@ -1,3 +1,6 @@
+import SvgNest from "./svgnest";
+import "./util/pathsegpolyfill";
+
 // UI-specific stuff, button clicks go here
 const svgNest = new SvgNest();
 
