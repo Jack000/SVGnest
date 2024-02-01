@@ -5,10 +5,15 @@
 
 import ClipperLib from "js-clipper";
 
-import GeneticAlgorithm from "./genetic-algorithm/genetic-algorithm";
-import SvgParser from "./svgparser";
-import Parallel from "./util/parallel";
-import GeometryUtil from "./util/geometryutil";
+import { GeneticAlgorithm } from "./genetic-algorithm";
+import { SvgParser } from "./svg-parser";
+import { Parallel } from "./parallel";
+import {
+  polygonArea,
+  pointInPolygon,
+  almostEqual,
+  getPolygonBounds
+} from "./geometry-util";
 
 function flattenTree(tree, hole, result = []) {
   const nodeCount = tree.length;
@@ -48,7 +53,7 @@ function toTree(list, idstart) {
     for (j = 0; j < list.length; ++j) {
       innerNode = list[j];
 
-      if (j !== i && GeometryUtil.pointInPolygon(outerNode[0], innerNode)) {
+      if (j !== i && pointInPolygon(outerNode[0], innerNode)) {
         if (!innerNode.children) {
           innerNode.children = [];
         }
@@ -228,7 +233,7 @@ export default class SvgNest {
 
     if (
       configuration.curveTolerance &&
-      !GeometryUtil.almostEqual(parseFloat(configuration.curveTolerance), 0)
+      !almostEqual(parseFloat(configuration.curveTolerance), 0)
     ) {
       this.configuration.curveTolerance = parseFloat(
         configuration.curveTolerance
@@ -308,7 +313,7 @@ export default class SvgNest {
       return false;
     }
 
-    this.binBounds = GeometryUtil.getPolygonBounds(this.binPolygon);
+    this.binBounds = getPolygonBounds(this.binPolygon);
 
     if (this.configuration.spacing > 0) {
       const offsetBin = this.polygonOffset(
@@ -357,7 +362,7 @@ export default class SvgNest {
     this.binPolygon.height = ybinmax - ybinmin;
 
     // all paths need to have the same winding direction
-    if (GeometryUtil.polygonArea(this.binPolygon) > 0) {
+    if (polygonArea(this.binPolygon) > 0) {
       this.binPolygon.reverse();
     }
 
@@ -372,13 +377,12 @@ export default class SvgNest {
 
       if (
         start == end ||
-        (GeometryUtil.almostEqual(start.x, end.x) &&
-          GeometryUtil.almostEqual(start.y, end.y))
+        (almostEqual(start.x, end.x) && almostEqual(start.y, end.y))
       ) {
         node.pop();
       }
 
-      if (GeometryUtil.polygonArea(node) > 0) {
+      if (polygonArea(node) > 0) {
         node.reverse();
       }
     }
@@ -415,11 +419,7 @@ export default class SvgNest {
       const adam = tree.slice(0);
 
       // seed with decreasing area
-      adam.sort(
-        (a, b) =>
-          Math.abs(GeometryUtil.polygonArea(b)) -
-          Math.abs(GeometryUtil.polygonArea(a))
-      );
+      adam.sort((a, b) => Math.abs(polygonArea(b)) - Math.abs(polygonArea(a)));
 
       this.genethicAlgorithm = new GeneticAlgorithm(
         adam,
@@ -568,14 +568,14 @@ export default class SvgNest {
               const numParts = placeList.length;
 
               for (i = 0; i < this.best.placements.length; ++i) {
-                totalArea += Math.abs(GeometryUtil.polygonArea(binPolygon));
+                totalArea += Math.abs(polygonArea(binPolygon));
                 bestPlacement = this.best.placements[i];
 
                 numPlacedParts += bestPlacement.length;
 
                 for (j = 0; j < bestPlacement.length; ++j) {
                   placedArea += Math.abs(
-                    GeometryUtil.polygonArea(tree[bestPlacement[j].id])
+                    polygonArea(tree[bestPlacement[j].id])
                   );
                 }
               }
@@ -617,11 +617,7 @@ export default class SvgNest {
       poly = this.cleanPolygon(poly);
 
       // todo: warn user if poly could not be processed and is excluded from the nest
-      if (
-        poly &&
-        poly.length > 2 &&
-        Math.abs(GeometryUtil.polygonArea(poly)) > trashold
-      ) {
+      if (poly && poly.length > 2 && Math.abs(polygonArea(poly)) > trashold) {
         poly.source = i;
         polygons.push(poly);
       }
@@ -636,7 +632,7 @@ export default class SvgNest {
   // use the clipper library to return an offset to the given polygon. Positive offset expands the polygon, negative contracts
   // note that this returns an array of polygons
   polygonOffset(polygon, offset) {
-    if (!offset || offset == 0 || GeometryUtil.almostEqual(offset, 0)) {
+    if (!offset || offset == 0 || almostEqual(offset, 0)) {
       return polygon;
     }
 

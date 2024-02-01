@@ -1,22 +1,30 @@
 import ClipperLib from "js-clipper";
-import GeometryUtil from "./geometryutil";
+import {
+  polygonArea,
+  getPolygonBounds,
+  almostEqual,
+  isRectangle,
+  noFitPolygonRectangle,
+  noFitPolygon,
+  pointInPolygon
+} from "../geometry-util";
 
 // clipperjs uses alerts for warnings
-function alert(message) {
+window.alert = function (message) {
   console.log("alert: ", message);
-}
+};
 
 // jsClipper uses X/Y instead of x/y...
 function toClipperCoordinates(polygon) {
-  var clone = [];
-  for (var i = 0; i < polygon.length; i++) {
-    clone.push({
-      X: polygon[i].x,
-      Y: polygon[i].y
-    });
+  const size = polygon.length;
+  const result = [];
+  let i = 0;
+
+  for (i = 0; i < size; ++i) {
+    result.push({ X: polygon[i].x, Y: polygon[i].y });
   }
 
-  return clone;
+  return result;
 }
 
 function toNestCoordinates(polygon, scale) {
@@ -74,7 +82,7 @@ function placePaths(paths, self) {
 
   var allplacements = [];
   var fitness = 0;
-  var binarea = Math.abs(GeometryUtil.polygonArea(self.binPolygon));
+  var binarea = Math.abs(polygonArea(self.binPolygon));
   var key, nfp;
 
   while (paths.length > 0) {
@@ -256,7 +264,7 @@ function placePaths(paths, self) {
 
       for (j = 0; j < finalNfp.length; j++) {
         nf = finalNfp[j];
-        if (Math.abs(GeometryUtil.polygonArea(nf)) < 2) {
+        if (Math.abs(polygonArea(nf)) < 2) {
           continue;
         }
 
@@ -286,7 +294,7 @@ function placePaths(paths, self) {
             });
           }
 
-          var rectbounds = GeometryUtil.getPolygonBounds(allpoints);
+          var rectbounds = getPolygonBounds(allpoints);
 
           // weigh width more, to help compress in direction of gravity
           area = rectbounds.width * 2 + rectbounds.height;
@@ -294,7 +302,7 @@ function placePaths(paths, self) {
           if (
             minarea === null ||
             area < minarea ||
-            (GeometryUtil.almostEqual(minarea, area) &&
+            (almostEqual(minarea, area) &&
               (minx === null || shiftvector.x < minx))
           ) {
             minarea = area;
@@ -362,7 +370,7 @@ function pairData(pair, env) {
 
     for (i = 0; i < solutionCount; ++i) {
       n = toNestCoordinates(solutions[i], 10000000);
-      sarea = GeometryUtil.polygonArea(n);
+      sarea = polygonArea(n);
 
       if (largestArea === null || largestArea > sarea) {
         clipperNfp = n;
@@ -390,16 +398,16 @@ function pairData(pair, env) {
   var nfp;
 
   if (pair.key.inside) {
-    if (GeometryUtil.isRectangle(A, 0.001)) {
-      nfp = GeometryUtil.noFitPolygonRectangle(A, B);
+    if (isRectangle(A, 0.001)) {
+      nfp = noFitPolygonRectangle(A, B);
     } else {
-      nfp = GeometryUtil.noFitPolygon(A, B, true, searchEdges);
+      nfp = noFitPolygon(A, B, true, searchEdges);
     }
 
     // ensure all interior NFPs have the same winding direction
     if (nfp && nfp.length > 0) {
       for (var i = 0; i < nfp.length; i++) {
-        if (GeometryUtil.polygonArea(nfp[i]) > 0) {
+        if (polygonArea(nfp[i]) > 0) {
           nfp[i].reverse();
         }
       }
@@ -410,7 +418,7 @@ function pairData(pair, env) {
     }
   } else {
     if (searchEdges) {
-      nfp = GeometryUtil.noFitPolygon(A, B, false, searchEdges);
+      nfp = noFitPolygon(A, B, false, searchEdges);
     } else {
       nfp = minkowskiDifference(A, B);
     }
@@ -425,15 +433,8 @@ function pairData(pair, env) {
     for (var i = 0; i < nfp.length; i++) {
       if (!searchEdges || i == 0) {
         // if searchedges is active, only the first NFP is guaranteed to pass sanity check
-        if (
-          Math.abs(GeometryUtil.polygonArea(nfp[i])) <
-          Math.abs(GeometryUtil.polygonArea(A))
-        ) {
-          log(
-            "NFP Area Error: ",
-            Math.abs(GeometryUtil.polygonArea(nfp[i])),
-            pair.key
-          );
+        if (Math.abs(polygonArea(nfp[i])) < Math.abs(polygonArea(A))) {
+          log("NFP Area Error: ", Math.abs(polygonArea(nfp[i])), pair.key);
           log("NFP:", JSON.stringify(nfp[i]));
           log("A: ", JSON.stringify(A));
           log("B: ", JSON.stringify(B));
@@ -449,13 +450,13 @@ function pairData(pair, env) {
 
     // for outer NFPs, the first is guaranteed to be the largest. Any subsequent NFPs that lie inside the first are holes
     for (var i = 0; i < nfp.length; i++) {
-      if (GeometryUtil.polygonArea(nfp[i]) > 0) {
+      if (polygonArea(nfp[i]) > 0) {
         nfp[i].reverse();
       }
 
       if (i > 0) {
-        if (GeometryUtil.pointInPolygon(nfp[i][0], nfp[0])) {
-          if (GeometryUtil.polygonArea(nfp[i]) < 0) {
+        if (pointInPolygon(nfp[i][0], nfp[0])) {
+          if (polygonArea(nfp[i]) < 0) {
             nfp[i].reverse();
           }
         }
@@ -464,23 +465,18 @@ function pairData(pair, env) {
 
     // generate nfps for children (holes of parts) if any exist
     if (useHoles && A.childNodes && A.childNodes.length > 0) {
-      var Bbounds = GeometryUtil.getPolygonBounds(B);
+      var Bbounds = getPolygonBounds(B);
 
       for (var i = 0; i < A.childNodes.length; i++) {
-        var Abounds = GeometryUtil.getPolygonBounds(A.childNodes[i]);
+        var Abounds = getPolygonBounds(A.childNodes[i]);
 
         // no need to find nfp if B's bounding box is too big
         if (Abounds.width > Bbounds.width && Abounds.height > Bbounds.height) {
-          var cnfp = GeometryUtil.noFitPolygon(
-            A.childNodes[i],
-            B,
-            true,
-            searchEdges
-          );
+          var cnfp = noFitPolygon(A.childNodes[i], B, true, searchEdges);
           // ensure all interior NFPs have the same winding direction
           if (cnfp && cnfp.length > 0) {
             for (var j = 0; j < cnfp.length; j++) {
-              if (GeometryUtil.polygonArea(cnfp[j]) < 0) {
+              if (polygonArea(cnfp[j]) < 0) {
                 cnfp[j].reverse();
               }
               nfp.push(cnfp[j]);

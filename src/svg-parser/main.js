@@ -4,8 +4,11 @@
  * Licensed under the MIT license
  */
 
-import GeometryUtil from "./util/geometryutil";
-import Matrix from "./util/matrix";
+import { almostEqual } from "../geometry-util";
+import Matrix from "./matrix";
+import Arc from "./arc-uti";
+import CubicBezier from "./cubic-bezier-util";
+import QuadraticBezier from "./quadratic-bezier-util";
 
 export default class SvgParser {
   constructor() {
@@ -860,7 +863,7 @@ export default class SvgParser {
               }
             case "q":
             case "Q":
-              var pointlist = GeometryUtil.QuadraticBezier.linearize(
+              var pointlist = QuadraticBezier(
                 { x: prevx, y: prevy },
                 { x: x, y: y },
                 { x: x1, y: y1 },
@@ -888,7 +891,7 @@ export default class SvgParser {
               }
             case "c":
             case "C":
-              var pointlist = GeometryUtil.CubicBezier.linearize(
+              var pointlist = CubicBezier(
                 { x: prevx, y: prevy },
                 { x: x, y: y },
                 { x: x1, y: y1 },
@@ -905,7 +908,7 @@ export default class SvgParser {
               break;
             case "a":
             case "A":
-              var pointlist = GeometryUtil.Arc.linearize(
+              var pointlist = Arc(
                 { x: prevx, y: prevy },
                 { x: x, y: y },
                 s.r1,
@@ -940,16 +943,8 @@ export default class SvgParser {
     // do not include last point if coincident with starting point
     while (
       poly.length > 0 &&
-      GeometryUtil.almostEqual(
-        poly[0].x,
-        poly[poly.length - 1].x,
-        this.conf.toleranceSvg
-      ) &&
-      GeometryUtil.almostEqual(
-        poly[0].y,
-        poly[poly.length - 1].y,
-        this.conf.toleranceSvg
-      )
+      almostEqual(poly[0].x, poly[poly.length - 1].x, this.conf.toleranceSvg) &&
+      almostEqual(poly[0].y, poly[poly.length - 1].y, this.conf.toleranceSvg)
     ) {
       poly.pop();
     }

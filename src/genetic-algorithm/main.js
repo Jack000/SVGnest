@@ -1,21 +1,5 @@
-import GeometryUtil from "../util/geometryutil";
+import { getPolygonBounds, rotatePolygon } from "../geometry-util";
 import Phenotype from "./phenotype";
-
-function shuffleArray(array) {
-  const lastIndex = array.length - 1;
-  let i = 0;
-  let j = 0;
-  let temp;
-
-  for (i = lastIndex; i > 0; --i) {
-    j = Math.floor(Math.random() * (i + 1));
-    temp = array[i];
-    array[i] = array[j];
-    array[j] = temp;
-  }
-
-  return array;
-}
 
 export default class GeneticAlgorithm {
   constructor(adam, bin, config) {
@@ -24,7 +8,7 @@ export default class GeneticAlgorithm {
       mutationRate: 10,
       rotations: 4
     };
-    this.binBounds = GeometryUtil.getPolygonBounds(bin);
+    this.binBounds = getPolygonBounds(bin);
 
     // population is an array of individuals. Each individual is a object representing the order of insertion and the angle each part is rotated
     const angles = [];
@@ -53,10 +37,10 @@ export default class GeneticAlgorithm {
       angleList.push(i * (360 / angleCount));
     }
 
-    angleList = shuffleArray(angleList);
+    angleList = GeneticAlgorithm.shuffleArray(angleList);
 
     for (i = 0; i < angleCount; ++i) {
-      rotatedPart = GeometryUtil.rotatePolygon(part, angleList[i]);
+      rotatedPart = rotatePolygon(part, angleList[i]);
 
       // don't use obviously bad angles where the part doesn't fit in the bin
       if (
@@ -172,5 +156,21 @@ export default class GeneticAlgorithm {
     }
 
     return localPopulation[0];
+  }
+
+  static shuffleArray(array) {
+    const lastIndex = array.length - 1;
+    let i = 0;
+    let j = 0;
+    let temp;
+
+    for (i = lastIndex; i > 0; --i) {
+      j = Math.floor(Math.random() * (i + 1));
+      temp = array[i];
+      array[i] = array[j];
+      array[j] = temp;
+    }
+
+    return array;
   }
 }

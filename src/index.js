@@ -1,5 +1,5 @@
 import SvgNest from "./svgnest";
-import "./util/pathsegpolyfill";
+import "./svg-parser/pathsegpolyfill";
 
 // UI-specific stuff, button clicks go here
 const svgNest = new SvgNest();
