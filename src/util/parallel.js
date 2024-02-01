@@ -49,175 +49,141 @@
 
 class Parallel {
   constructor(id, data, env, onSpawn) {
-    this.data = data;
+    this._data = data;
     this._maxWorkers = navigator.hardwareConcurrency || 4;
     this._options = { id, env };
-    this._operation = new Operation(this.data);
+    this._operation = new Operation(this._data);
     this._onSpawn = onSpawn;
   }
 
-  _spawnWorker() {
-    let worker;
+  _spawnWorker(inputWorker) {
+    let worker = inputWorker;
 
-    try {
-      worker = new Worker("src/util/shared-worker.js");
-      worker.postMessage(this._options);
-    } catch (e) {
-      throw e;
+    if (!worker) {
+      try {
+        worker = new Worker("src/util/shared-worker.js");
+        worker.postMessage(this._options);
+      } catch (e) {
+        throw e;
+      }
     }
 
     return worker;
   }
 
-  spawn() {
-    const operation = new Operation();
+  _triggerWorker(worker, data, onMessage, onError) {
+    if (!worker) {
+      return;
+    }
 
-    this._operation.then(() => {
-      const worker = this._spawnWorker();
-
-      if (worker) {
-        worker.onmessage = (message) => {
-          worker.terminate();
-          this.data = message.data;
-          operation.resolve(this.data);
-        };
-        worker.onerror = (error) => {
-          worker.terminate();
-          operation.reject(error);
-        };
-        worker.postMessage(this.data);
-      } else {
-        throw new Error(
-          "Workers do not exist and synchronous operation not allowed!"
-        );
-      }
-    });
-
-    this._operation = operation;
-
-    return this;
+    worker.onmessage = onMessage;
+    worker.onerror = onError;
+    worker.postMessage(data);
   }
 
   _spawnMapWorker(i, done, worker) {
     this._onSpawn && this._onSpawn();
 
-    if (!worker) {
-      worker = this._spawnWorker();
-    }
+    const resultWorker = this._spawnWorker(worker);
+    const onMessage = (message) => {
+      this._data[i] = message.data;
+      done(null, resultWorker);
+    };
+    const onError = (error) => {
+      resultWorker.terminate();
+      done(error);
+    };
 
-    if (worker) {
-      worker.onmessage = (message) => {
-        this.data[i] = message.data;
-        done(null, worker);
-      };
-      worker.onerror = (e) => {
-        worker.terminate();
-        done(e);
-      };
-      worker.postMessage(this.data[i]);
+    this._triggerWorker(resultWorker, this._data[i], onMessage, onError);
+  }
+
+  _triggerOperation(operation, resolve, reject) {
+    this._operation.then(resolve, reject);
+    this._operation = operation;
+  }
+
+  _processResult(callback, operation, data) {
+    if (callback) {
+      const result = callback(data);
+
+      if (result !== undefined) {
+        this._data = result;
+      }
+
+      operation.resolve(this._data);
     } else {
-      throw new Error(
-        "Workers do not exist and synchronous operation not allowed!"
-      );
+      operation.resolve(data);
     }
   }
 
-  map() {
-    if (!this.data.length) {
-      return this.spawn();
+  _getDataResolveCallback(operation) {
+    if (!this._data.length) {
+      return () => {
+        const worker = this._spawnWorker();
+        const onMessage = (message) => {
+          worker.terminate();
+          this._data = message.data;
+          operation.resolve(this._data);
+        };
+        const onError = (error) => {
+          worker.terminate();
+          operation.reject(error);
+        };
+
+        this._triggerWorker(worker, this._data, onMessage, onError);
+      };
     }
 
     let startedOps = 0;
     let doneOps = 0;
-    const operation = new Operation();
 
     const done = (error, worker) => {
       if (error) {
         operation.reject(error);
-      } else if (++doneOps === this.data.length) {
-        operation.resolve(this.data);
+      } else if (++doneOps === this._data.length) {
+        operation.resolve(this._data);
         if (worker) {
           worker.terminate();
         }
-      } else if (startedOps < this.data.length) {
+      } else if (startedOps < this._data.length) {
         this._spawnMapWorker(startedOps++, done, worker);
       } else if (worker) {
         worker.terminate();
       }
     };
 
-    this._operation.then(
-      () => {
-        for (
-          ;
-          startedOps - doneOps < this._maxWorkers &&
-          startedOps < this.data.length;
-          ++startedOps
-        ) {
-          this._spawnMapWorker(startedOps, done);
-        }
-      },
-      function (error) {
-        operation.reject(error);
+    return () => {
+      for (
+        ;
+        startedOps - doneOps < this._maxWorkers &&
+        startedOps < this._data.length;
+        ++startedOps
+      ) {
+        this._spawnMapWorker(startedOps, done);
       }
-    );
-    this._operation = operation;
+    };
   }
 
   then(successCallback, errorCallback = () => {}) {
-    this.map();
-    const operation = new Operation();
+    const dataOperation = new Operation();
+    const chainOperation = new Operation();
 
-    this._operation.then(
+    this._triggerOperation(
+      dataOperation,
+      this._getDataResolveCallback(dataOperation),
+      (error) => dataOperation.reject(error)
+    );
+
+    this._triggerOperation(
+      chainOperation,
       () => {
-        let result;
-
         try {
-          if (successCallback) {
-            result = successCallback(this.data);
-            if (result !== undefined) {
-              this.data = result;
-            }
-          }
-          operation.resolve(this.data);
+          this._processResult(successCallback, chainOperation, this._data);
         } catch (error) {
-          if (errorCallback) {
-            result = errorCallback(error);
-
-            if (result !== undefined) {
-              this.data = result;
-            }
-
-            operation.resolve(this.data);
-          } else {
-            operation.resolve(error);
-          }
+          this._processResult(errorCallback, chainOperation, error);
         }
       },
-      (error) => {
-        if (errorCallback) {
-          retData = errorCallback(error);
-
-          if (retData !== undefined) {
-            this.data = retData;
-          }
-
-          operation.resolve(this.data);
-        } else {
-          operation.resolve(error);
-        }
-      }
+      (error) => this._processResult(errorCallback, chainOperation, error)
     );
-    this._operation = operation;
-    return this;
-  }
-
-  static setImmediate(callback) {
-    setTimeout(callback, 0);
-  }
-
-  // static method
-  static isSupported() {
-    return true;
   }
 }
